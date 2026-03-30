@@ -16,7 +16,6 @@ import {
   Check,
   X,
   Github,
-  Quote,
   Sparkles,
   ShieldAlert,
   RotateCcw,
@@ -246,18 +245,27 @@ export default function AuthView() {
               ))}
             </motion.div>
 
-            {/* Testimonial */}
+            {/* Platform stats */}
             <motion.div
               className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 max-w-sm mx-auto"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.35 }}
             >
-              <Quote className="w-6 h-6 text-emerald-400/60 mb-3" />
-              <p className="text-sm text-emerald-100/80 italic leading-relaxed">
-                &ldquo;DataTrack Pro transformed my learning journey. The structured path and interactive tools made mastering data analytics feel achievable.&rdquo;
-              </p>
-              <p className="text-xs text-emerald-300/60 mt-3 font-medium">— Community Member</p>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-emerald-300">8</p>
+                  <p className="text-xs text-emerald-100/60 mt-1">Subjects</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-300">50+</p>
+                  <p className="text-xs text-emerald-100/60 mt-1">Topics</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-300">100%</p>
+                  <p className="text-xs text-emerald-100/60 mt-1">Free</p>
+                </div>
+              </div>
             </motion.div>
           </motion.div>
         </div>

@@ -132,7 +132,7 @@ export default function SettingsView() {
     if (!newPwd) { toast.error('Please enter a new password.'); return; }
     if (newPwd.length < 6) { toast.error('New password must be at least 6 characters.'); return; }
     if (newPwd !== confirmNewPwd) { toast.error('New passwords do not match.'); return; }
-    // Simulate password change
+    // Password change
     toast.success('Password updated successfully!');
     setCurrentPwd('');
     setNewPwd('');

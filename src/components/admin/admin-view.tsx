@@ -843,8 +843,8 @@ export default function AdminView() {
   }, [securityAuditLog, auditFilter]);
 
   const booksReadCount = Object.values(bookStatuses).filter(s => s === 'completed').length;
-  const totalTopicsCompleted = completedTopics.length + mockUsers.reduce((sum, u) => sum + u.coursesCompleted * 6, 0);
-  const totalChatMessages = chatMessages.length + 847;
+  const totalTopicsCompleted = completedTopics.length;
+  const totalChatMessages = chatMessages.length;
   const practiceCount = Object.keys(practiceScores).length;
   const practiceTotal = practiceCount > 0 ? Math.round(Object.values(practiceScores).reduce((a, b) => a + b, 0) / practiceCount) : 0;
   const certCount = completedCertificates.length;
@@ -856,20 +856,13 @@ export default function AdminView() {
     }).sort((a, b) => b.rate - a.rate);
   }, [completedTopics]);
 
-  const mockMonthlyRevenue = [
-    { month: 'Sep', revenue: 320 },
-    { month: 'Oct', revenue: 485 },
-    { month: 'Nov', revenue: 562 },
-    { month: 'Dec', revenue: 610 },
-    { month: 'Jan', revenue: 723 },
-    { month: 'Feb', revenue: 848 },
-  ];
+  const mockMonthlyRevenue: { month: string; revenue: number }[] = [];
 
   const stats = useMemo(() => ({
-    totalUsers: users.length + 146,
-    activeUsers: users.filter(u => u.status === 'active').length + 127,
-    proSubscriptions: users.filter(u => u.plan === 'pro' || u.plan === 'team').length + 98,
-    revenue: '$847.85',
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.status === 'active').length,
+    proSubscriptions: users.filter(u => u.plan === 'pro' || u.plan === 'team').length,
+    revenue: '$0.00',
     booksUploaded: mockBooks.filter(b => b.status === 'published').length,
     bannedUsers: users.filter(u => u.status === 'banned').length,
     securityEvents: securityAuditLog.length,

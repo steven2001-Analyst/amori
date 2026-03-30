@@ -5,18 +5,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useProgressStore } from '@/lib/store';
 import StudyLayout from '@/components/layout/study-layout';
 import FloatingAIBot from '@/components/ai/floating-ai-bot';
-import OnboardingTour from '@/components/onboarding/onboarding-tour';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Sparkles, Crown, Zap, ArrowRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const proFeaturePaths = [
-  'ai-assistant', 'ai-tutor', 'ai-sql-assistant', 'career-advisor',
-  'resume', 'resume-analyzer', 'playground', 'assessment', 'visualization',
-  'whiteboard', 'peer-review', 'practice', 'certificate',
-  'portfolio', 'resources', 'payment',
-  'course-store', 'pro-certifications', 'mentorship', 'live-practice',
-  'path-recommender', 'advanced-tools',
+  'ai-assistant',
+  'playground',
+  'payment',
 ];
 
 function PaywallOverlay({ featureId }: { featureId: string }) {
@@ -165,7 +161,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </StudyLayout>
       {featureId !== 'ai-assistant' && <FloatingAIBot />}
-      <OnboardingTour />
     </>
   );
 }

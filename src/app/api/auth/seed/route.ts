@@ -5,18 +5,27 @@ import { hashPassword } from '@/lib/auth';
 const prisma = new PrismaClient();
 
 // Seed the admin user into the database.
-// This runs once to migrate the hardcoded admin from localStorage.
+// This runs once to create the initial admin account.
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { secret } = body;
 
-    // Simple protection against accidental calls
-    if (secret !== 'datatrack-seed-2026') {
+    // Protection against unauthorized calls — use env variable
+    const seedSecret = process.env.SEED_SECRET || 'change-me-in-production';
+    if (secret !== seedSecret) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    const adminEmail = 'stevensaleh100@outlook.com';
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      return NextResponse.json(
+        { success: false, error: 'ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set' },
+        { status: 500 }
+      );
+    }
 
     // Check if admin already exists
     const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
@@ -25,16 +34,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create admin user with properly hashed password
-    const passwordHash = await hashPassword('datatrack2026');
+    const passwordHash = await hashPassword(adminPassword);
 
     await prisma.user.create({
       data: {
-        name: 'Steven',
+        name: 'Admin',
         email: adminEmail,
         passwordHash,
         role: 'admin',
         avatarColor: '#10b981',
-        joinedDate: '2025-01-01',
+        joinedDate: new Date().toISOString().split('T')[0],
         progress: {
           create: {
             completedTopics: '[]',

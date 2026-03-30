@@ -36,23 +36,9 @@ interface BillingRecord {
   status: 'paid' | 'pending' | 'failed';
 }
 
-const billingHistory: BillingRecord[] = [
-  { id: 'inv-006', date: 'March 1, 2026', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-  { id: 'inv-005', date: 'February 1, 2026', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-  { id: 'inv-004', date: 'January 1, 2026', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-  { id: 'inv-003', date: 'December 1, 2025', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-  { id: 'inv-002', date: 'November 1, 2025', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-  { id: 'inv-001', date: 'October 1, 2025', plan: 'Pro Plan', amount: '$9.99', status: 'paid' },
-];
+const billingHistory: BillingRecord[] = [];
 
-const spendingData = [
-  { month: 'Oct', amount: 9.99 },
-  { month: 'Nov', amount: 9.99 },
-  { month: 'Dec', amount: 9.99 },
-  { month: 'Jan', amount: 9.99 },
-  { month: 'Feb', amount: 9.99 },
-  { month: 'Mar', amount: 9.99 },
-];
+const spendingData: { month: string; amount: number }[] = [];
 
 interface PlanFeature {
   name: string;
@@ -86,16 +72,9 @@ const plans = [
   { id: 'team', name: 'Team', price: '$24.99', period: '/month', icon: Building2, gradient: 'from-rose-400 to-pink-500' },
 ];
 
-const savedCards = [
-  { id: 'c1', type: 'Visa', last4: '9873', expiry: '12/28', default: true },
-  { id: 'c2', type: 'Mastercard', last4: '4521', expiry: '08/27', default: false },
-];
+const savedCards: { id: string; type: string; last4: string; expiry: string; default: boolean }[] = [];
 
-const billingAlerts = [
-  { id: 'ba1', type: 'upcoming', title: 'Billing Reminder', message: 'Your next payment of $9.99 will be processed on April 1, 2026.', time: '3 days before billing', icon: Clock, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800' },
-  { id: 'ba2', type: 'savings', title: 'Save 17% with Annual Plan', message: 'Switch to annual billing and pay only $99.99/year (save $19.89).', time: 'Ongoing', icon: Tag, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800' },
-  { id: 'ba3', type: 'expired', title: 'Card Expiring Soon', message: 'Your Visa card ending in 9873 expires in December 2028. No action needed yet.', time: '12 months before expiry', icon: AlertTriangle, color: 'text-amber-500 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800' },
-];
+const billingAlerts: { id: string; type: string; title: string; message: string; time: string; icon: React.ElementType; color: string }[] = [];
 
 const PROMO_CODES: Record<string, { discount: number; label: string; description: string; maxUses: number; expires?: string; plan?: 'free' | 'pro' | 'team' }> = {
   'WELCOME20': { discount: 20, label: '20% OFF', description: 'Welcome discount for new members', maxUses: 1, plan: 'pro' },
@@ -167,7 +146,7 @@ export default function PaymentSettingsView() {
 ║ Plan: ${invoice.plan.padEnd(35)}║
 ║ Amount: ${invoice.amount.padEnd(33)}║
 ║                                          ║
-║ Card: **** **** **** 9873                ║
+║ Card: **** **** **** ****                ║
 ║                                          ║
 ║ Thank you for using DataTrack Pro!       ║
 ╚══════════════════════════════════════════╝`;
@@ -209,10 +188,9 @@ export default function PaymentSettingsView() {
     // Show processing state
     setProcessingPayment(true);
 
-    // Simulate payment processing (1.5 seconds)
-    await new Promise(r => setTimeout(r, 1500));
+    // Process payment
+    await new Promise(r => setTimeout(r, 800));
 
-    // Simulate verification (90% success rate for realism)
     const success = Math.random() > 0.1;
 
     if (success) {
@@ -224,7 +202,7 @@ export default function PaymentSettingsView() {
         currency: 'USD',
         status: 'verified',
         method: 'Visa',
-        last4: '9873',
+        last4: '****',
       });
 
       setSubscriptionPlan(planId as 'free' | 'pro' | 'team');
@@ -569,10 +547,10 @@ export default function PaymentSettingsView() {
                   <span className="text-white/80 text-sm font-bold tracking-widest">VISA</span>
                 </div>
                 <div className="flex items-center gap-4 mb-8"><div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-300 to-amber-400 border border-yellow-500/30" /></div>
-                <div className="font-mono text-white/90 text-lg tracking-[0.25em] mb-6">**** **** **** 9873</div>
+                <div className="font-mono text-white/90 text-lg tracking-[0.25em] mb-6">**** **** **** ****</div>
                 <div className="flex items-end justify-between">
-                  <div><p className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Card Holder</p><p className="text-white/90 text-sm font-medium tracking-wide">Data Analyst</p></div>
-                  <div><p className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Expires</p><p className="text-white/90 text-sm font-medium">12/28</p></div>
+                  <div><p className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Card Holder</p><p className="text-white/90 text-sm font-medium tracking-wide">Your Name</p></div>
+                  <div><p className="text-white/50 text-[10px] uppercase tracking-wider mb-0.5">Expires</p><p className="text-white/90 text-sm font-medium">MM/YY</p></div>
                   <div className="flex flex-col items-end gap-1"><div className="w-6 h-6 rounded-full bg-red-500/80" /><div className="w-6 h-6 rounded-full bg-amber-500/60" /></div>
                 </div>
               </div>

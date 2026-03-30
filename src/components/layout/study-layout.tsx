@@ -305,7 +305,7 @@ function AuthModal({ open, onOpenChange, defaultTab }: { open: boolean; onOpenCh
               <Input
                 id="login-email"
                 type="email"
-                placeholder="steven@datatrack.com"
+                placeholder="you@example.com"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
@@ -411,7 +411,7 @@ function AuthModal({ open, onOpenChange, defaultTab }: { open: boolean; onOpenCh
               <Input
                 id="signup-email"
                 type="email"
-                placeholder="john@datatrack.com"
+                placeholder="you@example.com"
                 value={signupEmail}
                 onChange={(e) => setSignupEmail(e.target.value)}
                 className="h-11"
