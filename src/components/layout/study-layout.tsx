@@ -86,7 +86,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useProgressStore } from '@/lib/store';
 
-export type Section = 'dashboard' | 'study' | 'ai-assistant' | 'ai-tutor' | 'notes' | 'flashcards' | 'challenge' | 'live-practice' | 'practice' | 'certificate' | 'books' | 'games' | 'tools' | 'sql-playground' | 'community' | 'chat' | 'payment' | 'achievements' | 'streaks' | 'portfolio' | 'resources' | 'resume' | 'resume-analyzer' | 'playground' | 'assessment' | 'visualization' | 'notifications' | 'peer-review' | 'whiteboard' | 'leaderboard' | 'profile' | 'settings' | 'admin' | 'advanced-tools' | 'path-recommender' | 'marketplace' | 'premium-membership' | 'referral-system' | 'ai-sql-assistant' | 'challenges' | 'career-advisor' | 'course-store' | 'pro-certifications' | 'mentorship';
+export type Section = 'dashboard' | 'study' | 'ai-assistant' | 'notes' | 'flashcards' | 'challenge' | 'books' | 'games' | 'sql-playground' | 'playground' | 'community' | 'leaderboard' | 'profile' | 'settings' | 'payment' | 'admin';
 
 interface StudyLayoutProps {
   children: React.ReactNode;
@@ -97,74 +97,40 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   adminOnly?: boolean;
-  category: 'learn' | 'ai' | 'community' | 'tools' | 'career' | 'admin';
+  category: 'learn' | 'tools' | 'community' | 'account';
 }
 
 const categoryLabels: Record<string, string> = {
   learn: '📚 Learning',
-  ai: '🤖 AI & Analytics',
-  tools: '🔧 Developer Tools',
+  tools: '🛠 Tools & AI',
   community: '💬 Community',
-  career: '🚀 Career & Growth',
-  admin: '⚙️ Account',
+  account: '⚙️ Account',
 };
 
 const allNavItems: NavItem[] = [
-  // ── Learn (Core) ──
+  // ── Learning (Core) ──
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'learn' },
   { id: 'study', label: 'Study Path', icon: BookOpen, category: 'learn' },
   { id: 'notes', label: 'Notes', icon: StickyNote, category: 'learn' },
   { id: 'flashcards', label: 'Flashcards', icon: Layers, category: 'learn' },
   { id: 'books', label: 'Books Library', icon: Library, category: 'learn' },
   { id: 'challenge', label: 'Daily Challenge', icon: Zap, category: 'learn' },
-  { id: 'practice', label: 'Practice', icon: Target, category: 'learn' },
-  { id: 'certificate', label: 'Certificates', icon: Award, category: 'learn' },
-  { id: 'streaks', label: 'Study Streaks', icon: Flame, category: 'learn' },
-  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, category: 'learn' },
-  { id: 'achievements', label: 'Achievements', icon: Trophy, category: 'learn' },
   { id: 'games', label: 'Games & Break', icon: Gamepad2, category: 'learn' },
+  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, category: 'learn' },
 
-  // ── AI & Analytics ──
-  { id: 'ai-assistant', label: 'AI Assistant', icon: Bot, category: 'ai' },
-  { id: 'ai-tutor', label: 'AI Tutor', icon: GraduationCap, category: 'ai' },
-  { id: 'live-practice', label: 'Live Practice', icon: Brain, category: 'ai' },
-  { id: 'ai-sql-assistant', label: 'AI SQL Assistant', icon: Database, category: 'ai' },
-  { id: 'path-recommender', label: 'Path Planner', icon: Route, category: 'ai' },
-  { id: 'career-advisor', label: 'Career Advisor', icon: Compass, category: 'ai' },
-
-  // ── Developer Tools ──
-  { id: 'tools', label: 'Study Tools', icon: Wrench, category: 'tools' },
+  // ── Tools & AI ──
+  { id: 'ai-assistant', label: 'AI Assistant', icon: Bot, category: 'tools' },
   { id: 'sql-playground', label: 'SQL Playground', icon: Database, category: 'tools' },
   { id: 'playground', label: 'Code Playground', icon: Terminal, category: 'tools' },
-  { id: 'visualization', label: 'Data Viz Studio', icon: BarChart3, category: 'tools' },
-  { id: 'advanced-tools', label: 'Advanced Tools', icon: Code, category: 'tools' },
-  { id: 'assessment', label: 'Skill Assessment', icon: Target, category: 'tools' },
-  { id: 'whiteboard', label: 'Whiteboard', icon: Pen, category: 'tools' },
 
   // ── Community ──
   { id: 'community', label: 'Community', icon: Users, category: 'community' },
-  { id: 'chat', label: 'Chat Room', icon: MessageCircle, category: 'community' },
-  { id: 'peer-review', label: 'Peer Review', icon: MessageSquarePlus, category: 'community' },
-  { id: 'notifications', label: 'Notifications', icon: Bell, category: 'community' },
 
-  // ── Career & Growth ──
-  { id: 'course-store', label: 'Course Store', icon: GraduationCap, category: 'career' },
-  { id: 'pro-certifications', label: 'Pro Certifications', icon: Award, category: 'career' },
-  { id: 'mentorship', label: 'Mentorship', icon: Users, category: 'career' },
-  { id: 'challenges', label: 'Challenge Arena', icon: Trophy, category: 'career' },
-  { id: 'portfolio', label: 'Portfolio', icon: Briefcase, category: 'career' },
-  { id: 'resume', label: 'Resume Builder', icon: FileText, category: 'career' },
-  { id: 'resume-analyzer', label: 'Resume Analyzer', icon: ScanSearch, category: 'career' },
-  { id: 'resources', label: 'Video & Resources', icon: Video, category: 'career' },
-  { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag, category: 'career' },
-
-  // ── Account & Settings ──
-  { id: 'payment', label: 'Payment', icon: CreditCard, category: 'admin' },
-  { id: 'premium-membership', label: 'Premium', icon: Crown, category: 'admin' },
-  { id: 'referral-system', label: 'Referrals', icon: Gift, category: 'admin' },
-  { id: 'profile', label: 'Profile', icon: User, category: 'admin' },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon, category: 'admin' },
-  { id: 'admin', label: 'Admin', icon: Shield, adminOnly: true, category: 'admin' },
+  // ── Account ──
+  { id: 'profile', label: 'Profile', icon: User, category: 'account' },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon, category: 'account' },
+  { id: 'payment', label: 'Upgrade to Pro', icon: Crown, category: 'account' },
+  { id: 'admin', label: 'Admin', icon: Shield, adminOnly: true, category: 'account' },
 ];
 
 // ─── Password Strength Meter ───
