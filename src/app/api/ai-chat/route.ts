@@ -4,6 +4,28 @@ import { NextResponse } from 'next/server';
 // Allow up to 60 seconds for AI generation on Vercel serverless
 export const maxDuration = 60;
 
+// ─── Cached ZAI Instance (module-level singleton) ───
+// Creating ZAI.create() on every request was the main bottleneck.
+// Now we create it once and reuse it for all subsequent requests.
+let cachedZAI: Awaited<ReturnType<typeof ZAI.create>> | null = null;
+let zaiInitPromise: Promise<Awaited<ReturnType<typeof ZAI.create>>> | null = null;
+
+async function getZAI(): Promise<Awaited<ReturnType<typeof ZAI.create>>> {
+  if (cachedZAI) return cachedZAI;
+  if (zaiInitPromise) return zaiInitPromise;
+
+  zaiInitPromise = ZAI.create().then((zai) => {
+    cachedZAI = zai;
+    zaiInitPromise = null;
+    return zai;
+  }).catch((err) => {
+    zaiInitPromise = null;
+    throw err;
+  });
+
+  return zaiInitPromise;
+}
+
 const SYSTEM_PROMPT = `You are DataBot, an intelligent and versatile AI assistant for DataTrack Pro learning platform. You are extremely knowledgeable in ALL subjects including:
 - Data Analytics (Excel, SQL, Power BI, Python, Data Warehousing, Databricks)
 - Programming (Python, JavaScript, TypeScript, Java, C++, R, Go, Rust, SQL)
@@ -22,16 +44,20 @@ Guidelines:
 - Keep responses focused but thorough
 - When explaining concepts, start simple then add depth`;
 
-async function callAI(messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>, maxRetries = 1): Promise<string> {
+async function callAI(messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>, maxRetries = 2): Promise<string> {
   let lastError: Error | null = null;
-  
+
+  // 3 attempts: 45s, 45s, 25s timeouts
+  const timeouts = [45000, 45000, 25000];
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      const zai = await ZAI.create();
+      const zai = await getZAI();
+      const timeoutMs = timeouts[attempt] || 25000;
       const completion = await Promise.race([
         zai.chat.completions.create({ messages }),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('AI response timed out')), 15000)
+          setTimeout(() => reject(new Error('AI response timed out')), timeoutMs)
         ),
       ]);
       const reply = completion.choices[0]?.message?.content;
@@ -40,13 +66,13 @@ async function callAI(messages: Array<{ role: 'system' | 'user' | 'assistant'; c
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
       if (attempt < maxRetries) {
-        const delay = 1000;
+        const delay = attempt === 0 ? 800 : 1500;
         console.warn(`AI call attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${delay}ms...`);
         await new Promise(r => setTimeout(r, delay));
       }
     }
   }
-  
+
   throw lastError || new Error('AI service unavailable');
 }
 
@@ -100,8 +126,8 @@ export async function POST(request: Request) {
         : 'unavailable';
 
     return NextResponse.json(
-      { 
-        error: 'AI is temporarily unavailable. Please try again in a moment.', 
+      {
+        error: 'AI is temporarily unavailable. Please try again in a moment.',
         reply: null,
         details: errorMsg,
         errorType,

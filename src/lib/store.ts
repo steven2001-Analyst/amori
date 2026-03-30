@@ -1186,7 +1186,7 @@ export const useProgressStore = create<ProgressState>()(
         const freeFeatures = [
           'dashboard', 'study', 'books', 'games', 'community', 'chat',
           'notes', 'flashcards', 'profile', 'settings', 'achievements',
-          'challenge', 'leaderboard', 'notifications',
+          'challenge', 'leaderboard', 'notifications', 'challenges',
         ];
         
         const proFeatures = [
@@ -1194,6 +1194,8 @@ export const useProgressStore = create<ProgressState>()(
           'resume', 'playground', 'assessment', 'visualization',
           'whiteboard', 'peer-review', 'practice', 'certificate',
           'portfolio', 'resources', 'payment',
+          'ai-sql-assistant', 'career-advisor',
+          'course-store', 'pro-certifications', 'mentorship',
         ];
         
         if (freeFeatures.includes(featureId)) return true;

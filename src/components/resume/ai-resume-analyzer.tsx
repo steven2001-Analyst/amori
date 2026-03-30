@@ -439,11 +439,16 @@ WEAKNESSES: 3 comma-separated areas for improvement
 SUGGESTIONS: 3 comma-separated actionable suggestions`;
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: prompt, context: 'resume-analyzer' }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       const data = await res.json();
 
       if (data.reply) {

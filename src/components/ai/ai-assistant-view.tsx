@@ -1580,10 +1580,10 @@ export default function AIAssistantView() {
   }, [messages, isLoading, scrollToBottom]);
 
   const callAI = useCallback(async (prompt: string): Promise<string> => {
-    // Fast retries with short timeouts - AI should respond quickly
+    // Retries with generous timeouts — backend now has cached ZAI + 3 retries
     const attempts = [
-      { timeout: 15000, delay: 0 },
-      { timeout: 20000, delay: 1000 },
+      { timeout: 20000, delay: 0 },
+      { timeout: 30000, delay: 1000 },
     ];
 
     let lastError: Error | null = null;

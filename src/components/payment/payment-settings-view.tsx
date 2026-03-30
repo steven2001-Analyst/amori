@@ -352,6 +352,34 @@ export default function PaymentSettingsView() {
         </div>
       </motion.div>
 
+      {/* Payment Mode Status Banner */}
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+        <div className={cn(
+          'flex items-center gap-3 p-4 rounded-xl border',
+          'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
+        )}>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0">
+            <Info className="w-5 h-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold">Payment Mode: Demo</h4>
+              <Badge className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 font-bold animate-pulse">DEMO MODE</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Stripe keys are not configured. Payments are simulated for demonstration purposes.{' '}
+              <button onClick={() => document.getElementById('setup-guide')?.scrollIntoView({ behavior: 'smooth' })} className="text-amber-600 dark:text-amber-400 hover:underline font-medium">
+                Set up Stripe &rarr;
+              </button>
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Sandbox</span>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Billing Alerts */}
       {visibleAlerts.length > 0 && (
         <div className="space-y-3">
@@ -747,13 +775,13 @@ export default function PaymentSettingsView() {
         </Card>
       </motion.div>
 
-      {/* How to Get Started with Payments */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
+      {/* Stripe Setup Guide */}
+      <motion.div id="setup-guide" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
         <Card className="border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Zap className="w-4 h-4 text-emerald-500" />
-              How to Start Receiving Payments
+              Stripe Setup Guide
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -761,7 +789,7 @@ export default function PaymentSettingsView() {
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Stripe Checkout is Already Integrated</p>
-                <p className="text-xs text-muted-foreground mt-1">Your platform uses Stripe for payment processing. When users click &quot;Subscribe with Stripe&quot;, they're redirected to a secure checkout page. Payments are confirmed via Stripe webhooks.</p>
+                <p className="text-xs text-muted-foreground mt-1">Your platform uses Stripe for payment processing. When users click &quot;Subscribe with Stripe&quot;, they are redirected to a secure checkout page. Follow the steps below to go live.</p>
               </div>
             </div>
 
@@ -771,7 +799,7 @@ export default function PaymentSettingsView() {
                 Create a Stripe Account
               </h4>
               <p className="text-xs text-muted-foreground ml-8">
-                Go to <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">stripe.com</span> and sign up for a free account. You'll need to provide your business details and bank information.
+                Go to <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">stripe.com</span> and sign up for a free account. Provide your business details and bank information to start receiving payments.
               </p>
             </div>
 
@@ -781,57 +809,58 @@ export default function PaymentSettingsView() {
                 Get Your API Keys
               </h4>
               <p className="text-xs text-muted-foreground ml-8">
-                In your Stripe Dashboard, go to Developers &rarr; API Keys. Create a &quot;Secret key&quot; and &quot;Publishable key&quot;. Add them to your <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">.env.local</span> file as:
+                In your Stripe Dashboard, go to Developers &rarr; API Keys. Create a &quot;Secret key&quot; and &quot;Publishable key&quot;. Add them to your <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">.env.local</span> file:
               </p>
               <pre className="text-xs bg-muted p-3 rounded-lg mt-2 ml-8 font-mono overflow-x-auto">
-{`STRIPE_SECRET_KEY=sk_test_xxxxxxxxx
-STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxx`}</pre>
+{`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxx
+STRIPE_SECRET_KEY=sk_test_xxxxxxxxx`}</pre>
               <p className="text-xs text-muted-foreground ml-8 mt-1.5">
-                <strong>Note:</strong> Use test keys for development. Switch to live keys before going live.
+                <strong>Note:</strong> Use test keys (pk_test_/sk_test_) for development. Switch to live keys (pk_live_/sk_live_) before going live.
               </p>
             </div>
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center">3</span>
-                Configure Webhook
+                Add Environment Variables to Vercel
               </h4>
               <p className="text-xs text-muted-foreground ml-8">
-                In Stripe Dashboard, go to Developers &rarr; Webhooks. Add an endpoint: <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">/api/stripe-webhook</span>
+                In your Vercel project settings (Project &rarr; Settings &rarr; Environment Variables), add:
               </p>
-              <p className="text-xs text-muted-foreground ml-8 mt-1">
-                Event type: <code className="bg-muted px-1.5 py-0.5 rounded text-xs">checkout.session.completed</code> — This fires when someone successfully pays.
-              </p>
+              <pre className="text-xs bg-muted p-3 rounded-lg mt-2 ml-8 font-mono overflow-x-auto">
+{`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
+STRIPE_SECRET_KEY=sk_live_xxxxx
+NEXT_PUBLIC_APP_URL=https://your-domain.com`}</pre>
             </div>
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center">4</span>
-                Update Your Vercel Environment
+                Create Products and Prices in Stripe Dashboard
               </h4>
               <p className="text-xs text-muted-foreground ml-8">
-                In your Vercel project settings, add these environment variables:
+                Go to Stripe Dashboard &rarr; Products and create a product for each plan (e.g., &quot;DataTrack Pro Plan&quot;). Under each product, add a Price with:
+              </p>
+              <ul className="text-xs text-muted-foreground ml-8 mt-1.5 space-y-1">
+                <li className="flex items-start gap-2"><ArrowRight className="w-3 h-3 mt-0.5 shrink-0" />Recurring billing: Monthly</li>
+                <li className="flex items-start gap-2"><ArrowRight className="w-3 h-3 mt-0.5 shrink-0" />Pro Plan: $9.99/month</li>
+                <li className="flex items-start gap-2"><ArrowRight className="w-3 h-3 mt-0.5 shrink-0" />Team Plan: $24.99/month</li>
+              </ul>
+              <p className="text-xs text-muted-foreground ml-8 mt-1.5">
+                Copy the <strong>Price IDs</strong> (look like <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">price_xxxxxxxxxxxxx</span>) and add them to your environment variables:
               </p>
               <pre className="text-xs bg-muted p-3 rounded-lg mt-2 ml-8 font-mono overflow-x-auto">
-{`STRIPE_SECRET_KEY=sk_live_xxxxx
-STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_xxxxx
-NEXT_PUBLIC_APP_URL=https://datatrack-pro.vercel.app`}</pre>
-              <p className="text-xs text-muted-foreground ml-8 mt-1.5">
-                Vercel auto-deploys on push. Set these in Project &rarr; Settings &rarr; Environment Variables.
-              </p>
+{`STRIPE_PRO_PRICE_ID=price_xxxxxxxxxxxxx
+STRIPE_TEAM_PRICE_ID=price_xxxxxxxxxxxxx`}</pre>
             </div>
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold flex items-center justify-center">5</span>
-                Test Your Checkout
+                Configure Webhooks & Test
               </h4>
               <p className="text-xs text-muted-foreground ml-8">
-                Use Stripe's test card number <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">4242 4242 4242 4242</span> to test the full payment flow before going live.
-              </p>
-              <p className="text-xs text-muted-foreground ml-8 mt-1">
-                Go live: Replace test keys with live keys and test with a real card.
+                In Stripe Dashboard &rarr; Developers &rarr; Webhooks, add endpoint <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">/api/stripe-webhook</span> with event <code className="bg-muted px-1.5 py-0.5 rounded text-xs">checkout.session.completed</code>. Use test card <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">4242 4242 4242 4242</span> to test.
               </p>
             </div>
 
@@ -844,7 +873,6 @@ NEXT_PUBLIC_APP_URL=https://datatrack-pro.vercel.app`}</pre>
                   <li>Set up proper CORS in Stripe Dashboard</li>
                   <li>Use Stripe CLI for local testing: <code className="bg-muted px-1 py-0.5 rounded text-xs">stripe listen --forward-to https://localhost:3000/api/stripe-webhook</code></li>
                   <li>Monitor payouts in Stripe Dashboard &rarr; Payments</li>
-                  <li>Your existing webhook endpoint already handles the success flow</li>
                 </ul>
               </div>
             </div>

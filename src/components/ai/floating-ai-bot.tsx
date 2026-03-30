@@ -14,6 +14,24 @@ interface ChatMessage {
   timestamp: Date;
 }
 
+// ─── Navigation Keyword Detection ───
+// Returns true if the input matches a known navigation/help keyword.
+// These get instant hardcoded responses (fast, useful).
+function isNavigationQuery(input: string): boolean {
+  const lower = input.toLowerCase().trim();
+  const navKeywords = [
+    'dashboard', 'study', 'learn', 'book', 'library', 'chat',
+    'ai', 'assistant', 'tool', 'advanced', 'game', 'achievement',
+    'badge', 'trophy', 'certificate', 'profile', 'settings', 'account',
+    'payment', 'subscription', 'upgrade', 'plan', 'pricing', 'admin',
+    'flashcard', 'note', 'streak', 'challenge', 'daily', 'practice',
+    'exercise', 'portfolio', 'resource', 'video', 'promo', 'discount',
+    'code', 'help', 'how', 'what can', 'hello', 'hi', 'hey', 'greet',
+    'thank', 'thanks', 'thx',
+  ];
+  return navKeywords.some((kw) => lower.includes(kw));
+}
+
 // ─── Smart Response Engine ───
 function getBotResponse(input: string): string {
   const lower = input.toLowerCase().trim();
@@ -521,13 +539,14 @@ export default function FloatingAIBot() {
   }, [isOpen]);
 
   // Send message
-  const sendMessage = useCallback((text: string) => {
+  const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
 
+    const trimmed = text.trim();
     const userMsg: ChatMessage = {
       id: `msg-user-${Date.now()}`,
       role: 'user',
-      content: text.trim(),
+      content: trimmed,
       timestamp: new Date(),
     };
 
@@ -535,19 +554,70 @@ export default function FloatingAIBot() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate typing delay for natural feel
-    const responseDelay = 400 + Math.random() * 600;
-    setTimeout(() => {
-      const response = getBotResponse(text.trim());
+    // Strategy: navigation/help keywords get instant hardcoded responses;
+    // everything else goes to the real AI API.
+    if (isNavigationQuery(trimmed)) {
+      // Instant hardcoded response for navigation queries (fast & useful)
+      const responseDelay = 300 + Math.random() * 400;
+      setTimeout(() => {
+        const response = getBotResponse(trimmed);
+        const botMsg: ChatMessage = {
+          id: `msg-bot-${Date.now()}`,
+          role: 'bot',
+          content: response,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMsg]);
+        setIsTyping(false);
+      }, responseDelay);
+      return;
+    }
+
+    // General questions → call the real AI API
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
+    try {
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      const data = await res.json();
+
+      if (data.reply) {
+        const botMsg: ChatMessage = {
+          id: `msg-bot-${Date.now()}`,
+          role: 'bot',
+          content: data.reply,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMsg]);
+      } else {
+        // API returned no reply — use generic fallback
+        const botMsg: ChatMessage = {
+          id: `msg-bot-${Date.now()}`,
+          role: 'bot',
+          content: `Hmm, I couldn't get an answer for that. Try rephrasing your question, or type **"help"** to see what I can assist with!`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMsg]);
+      }
+    } catch {
+      clearTimeout(timeoutId);
+      // API call failed (timeout, network, etc.) — use generic fallback
       const botMsg: ChatMessage = {
         id: `msg-bot-${Date.now()}`,
         role: 'bot',
-        content: response,
+        content: `Sorry, I'm having trouble connecting to my AI brain right now. \n\nIn the meantime, try typing **"help"** for a list of topics I can explain instantly!`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);
+    } finally {
       setIsTyping(false);
-    }, responseDelay);
+    }
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {

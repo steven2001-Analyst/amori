@@ -57,6 +57,7 @@ import {
   ShoppingBag,
   Crown,
   Gift,
+  Compass,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -84,7 +85,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useProgressStore } from '@/lib/store';
 
-export type Section = 'dashboard' | 'study' | 'ai-assistant' | 'ai-tutor' | 'notes' | 'flashcards' | 'challenge' | 'live-practice' | 'practice' | 'certificate' | 'books' | 'games' | 'tools' | 'sql-playground' | 'community' | 'chat' | 'payment' | 'achievements' | 'streaks' | 'portfolio' | 'resources' | 'resume' | 'resume-analyzer' | 'playground' | 'assessment' | 'visualization' | 'notifications' | 'peer-review' | 'whiteboard' | 'leaderboard' | 'profile' | 'settings' | 'admin' | 'advanced-tools' | 'path-recommender' | 'marketplace' | 'premium-membership' | 'referral-system';
+export type Section = 'dashboard' | 'study' | 'ai-assistant' | 'ai-tutor' | 'notes' | 'flashcards' | 'challenge' | 'live-practice' | 'practice' | 'certificate' | 'books' | 'games' | 'tools' | 'sql-playground' | 'community' | 'chat' | 'payment' | 'achievements' | 'streaks' | 'portfolio' | 'resources' | 'resume' | 'resume-analyzer' | 'playground' | 'assessment' | 'visualization' | 'notifications' | 'peer-review' | 'whiteboard' | 'leaderboard' | 'profile' | 'settings' | 'admin' | 'advanced-tools' | 'path-recommender' | 'marketplace' | 'premium-membership' | 'referral-system' | 'ai-sql-assistant' | 'challenges' | 'career-advisor' | 'course-store' | 'pro-certifications' | 'mentorship';
 
 interface StudyLayoutProps {
   activeSection: Section;
@@ -130,6 +131,12 @@ const allNavItems: { id: Section; label: string; icon: React.ElementType; adminO
   { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
   { id: 'premium-membership', label: 'Premium', icon: Crown },
   { id: 'referral-system', label: 'Referrals', icon: Gift },
+  { id: 'ai-sql-assistant', label: 'AI SQL Assistant', icon: Database },
+  { id: 'challenges', label: 'Challenge Arena', icon: Trophy },
+  { id: 'career-advisor', label: 'Career Advisor', icon: Compass },
+  { id: 'course-store', label: 'Course Store', icon: GraduationCap },
+  { id: 'pro-certifications', label: 'Pro Certifications', icon: Award },
+  { id: 'mentorship', label: 'Mentorship', icon: Users },
   { id: 'admin', label: 'Admin', icon: Shield, adminOnly: true },
 ];
 

@@ -43,6 +43,12 @@ import PathRecommenderView from '@/components/ai/path-recommender-view';
 import MarketplaceView from '@/components/marketplace/marketplace-view';
 import PremiumMembershipView from '@/components/marketplace/premium-membership-view';
 import ReferralSystemView from '@/components/marketplace/referral-system-view';
+import CourseStoreView from '@/components/course-store/course-store-view';
+import ProCertificationsView from '@/components/pro-certifications/pro-certifications-view';
+import MentorshipView from '@/components/mentorship/mentorship-view';
+import AISQLAssistantView from '@/components/ai-sql-assistant/ai-sql-assistant-view';
+import ChallengesView from '@/components/challenges/challenges-view';
+import CareerAdvisorView from '@/components/career-advisor/career-advisor-view';
 import { useProgressStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Sparkles, Crown, Zap, ArrowRight, Shield, AlertTriangle } from 'lucide-react';
@@ -209,6 +215,12 @@ export default function Home() {
             {activeSection === 'marketplace' && <MarketplaceView />}
             {activeSection === 'premium-membership' && <PremiumMembershipView />}
             {activeSection === 'referral-system' && <ReferralSystemView />}
+            {activeSection === 'course-store' && <CourseStoreView />}
+            {activeSection === 'pro-certifications' && <ProCertificationsView />}
+            {activeSection === 'mentorship' && <MentorshipView />}
+            {activeSection === 'ai-sql-assistant' && <AISQLAssistantView />}
+            {activeSection === 'challenges' && <ChallengesView />}
+            {activeSection === 'career-advisor' && <CareerAdvisorView />}
           </>
         )}
       </StudyLayout>
