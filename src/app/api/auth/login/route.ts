@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         location: user.location,
         occupation: user.occupation,
         isPremium: user.isPremium,
-        onboarded: !!(user.age && user.gender && user.interests !== '[]'),
+        onboarded: !!(user.age && user.gender && user.interests && user.interests.length > 0),
       },
       token,
     })
