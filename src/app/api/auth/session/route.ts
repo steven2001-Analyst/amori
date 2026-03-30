@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,14 +19,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch fresh user data
-    const user = await db.user.findUnique({
-      where: { id: payload.userId },
-      include: { progress: true },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .select('*, UserProgress(*)')
+      .eq('id', payload.userId)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
+
+    const progress = (user.UserProgress as any)?.[0] || null;
 
     return NextResponse.json({
       success: true,
@@ -40,14 +41,13 @@ export async function GET(request: NextRequest) {
         avatarColor: user.avatarColor,
         profilePicture: user.profilePicture,
         joinedDate: user.joinedDate,
-        xp: user.progress?.xp || 0,
-        level: user.progress?.level || 1,
-        streak: user.progress?.streak || 0,
+        xp: progress?.xp || 0,
+        level: progress?.level || 1,
+        streak: progress?.streak || 0,
       },
     });
   } catch (error) {
     console.error('Session error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }

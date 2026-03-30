@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 // GET /api/admin/users - real user list for admin panel
 export async function GET(request: NextRequest) {
@@ -16,17 +14,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
-    const users = await db.user.findMany({
-      include: {
-        progress: { select: { xp: true, level: true, streak: true, quizHighScore: true } },
-        payments: { select: { plan: true, amount: true, status: true, createdAt: true } },
-        posts: { select: { id: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+    const { data: users, error: usersError } = await supabase
+      .from('User')
+      .select('*, UserProgress(xp, level, streak, quizHighScore), Payment(plan, amount, status, createdAt), CommunityPost(id)')
+      .order('createdAt', { ascending: false })
+      .limit(50);
 
-    const userList = users.map((u) => ({
+    if (usersError) {
+      console.error('Admin users query error:', usersError);
+      return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+    }
+
+    const userList = (users || []).map((u: any) => ({
       id: u.id,
       name: u.name,
       email: u.email,
@@ -34,29 +33,40 @@ export async function GET(request: NextRequest) {
       avatarColor: u.avatarColor,
       joinedDate: u.joinedDate,
       isActive: u.isActive,
-      plan: u.payments.length > 0 ? u.payments[u.payments.length - 1].plan : 'free',
-      xp: u.progress?.xp || 0,
-      level: u.progress?.level || 1,
-      streak: u.progress?.streak || 0,
-      posts: u.posts.length,
-      payments: u.payments.length,
+      plan: (u.Payment || []).length > 0
+        ? u.Payment[u.Payment.length - 1].plan
+        : 'free',
+      xp: u.UserProgress?.[0]?.xp || 0,
+      level: u.UserProgress?.[0]?.level || 1,
+      streak: u.UserProgress?.[0]?.streak || 0,
+      posts: (u.CommunityPost || []).length,
+      payments: (u.Payment || []).length,
     }));
 
+    // Fetch stats in parallel
+    const today = new Date().toISOString().split('T')[0];
+
+    const [{ count: totalUsers }, { count: totalPosts }, { count: totalPayments }, { data: activeUsers }] =
+      await Promise.all([
+        supabase.from('User').select('*', { count: 'exact', head: true }),
+        supabase.from('CommunityPost').select('*', { count: 'exact', head: true }),
+        supabase.from('Payment').select('*', { count: 'exact', head: true }),
+        supabase
+          .from('UserProgress')
+          .select('userId')
+          .eq('lastStudyDate', today),
+      ]);
+
     const stats = {
-      totalUsers: await db.user.count(),
-      totalPosts: await db.communityPost.count(),
-      totalPayments: await db.payment.count(),
-      activeToday: await db.user.count({
-        where: {
-          progress: { lastStudyDate: new Date().toISOString().split('T')[0] },
-        },
-      }),
+      totalUsers: totalUsers || 0,
+      totalPosts: totalPosts || 0,
+      totalPayments: totalPayments || 0,
+      activeToday: new Set((activeUsers || []).map((u: any) => u.userId)).size,
     };
 
     return NextResponse.json({ success: true, users: userList, stats });
   } catch (error) {
     console.error('Admin users GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }

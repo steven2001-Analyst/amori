@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 // Seed the admin user into the database.
 // This runs once to create the initial admin account.
@@ -28,7 +26,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if admin already exists
-    const existing = await db.user.findUnique({ where: { email: adminEmail } });
+    const { data: existing, error: existingError } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', adminEmail)
+      .single();
+
     if (existing) {
       return NextResponse.json({ success: true, message: 'Admin user already exists' });
     }
@@ -36,31 +39,45 @@ export async function POST(request: NextRequest) {
     // Create admin user with properly hashed password
     const passwordHash = await hashPassword(adminPassword);
 
-    await db.user.create({
-      data: {
+    const { error: createError } = await supabase
+      .from('User')
+      .insert({
         name: 'Admin',
         email: adminEmail,
         passwordHash,
         role: 'admin',
         avatarColor: '#10b981',
         joinedDate: new Date().toISOString().split('T')[0],
-        progress: {
-          create: {
-            completedTopics: '[]',
-            streak: 0,
-            xp: 0,
-            level: 1,
-            quizHighScore: 0,
-            totalStudyMinutes: 0,
-          },
-        },
-      },
-    });
+      });
+
+    if (createError) {
+      console.error('Admin user creation error:', createError);
+      return NextResponse.json({ success: false, error: 'Failed to create admin user' }, { status: 500 });
+    }
+
+    // Fetch the created admin to get the ID
+    const { data: adminUser } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', adminEmail)
+      .single();
+
+    if (adminUser) {
+      // Create progress record for the admin
+      await supabase.from('UserProgress').insert({
+        userId: adminUser.id,
+        completedTopics: '[]',
+        streak: 0,
+        xp: 0,
+        level: 1,
+        quizHighScore: 0,
+        totalStudyMinutes: 0,
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'Admin user seeded successfully' });
   } catch (error) {
     console.error('Seed error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }

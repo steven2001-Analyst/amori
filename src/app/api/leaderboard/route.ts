@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 // GET /api/leaderboard - real leaderboard from database
 export async function GET(request: NextRequest) {
@@ -16,22 +14,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get top users by XP from progress
-    const topUsers = await db.userProgress.findMany({
-      include: {
-        user: { select: { id: true, name: true, email: true, avatarColor: true, joinedDate: true } },
-      },
-      orderBy: { xp: 'desc' },
-      take: 20,
-    });
+    // Get top users by XP from progress, with user info
+    const { data: topUsers, error } = await supabase
+      .from('UserProgress')
+      .select('*, User(id, name, email, avatarColor, joinedDate)')
+      .order('xp', { ascending: false })
+      .limit(20);
 
-    const leaderboard = topUsers
-      .filter((u) => u.xp > 0)
-      .map((u, index) => ({
+    if (error) {
+      console.error('Leaderboard query error:', error);
+      return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+    }
+
+    const leaderboard = (topUsers || [])
+      .filter((u: any) => u.xp > 0)
+      .map((u: any, index: number) => ({
         rank: index + 1,
-        name: u.user.name,
-        email: u.user.email,
-        avatarColor: u.user.avatarColor,
+        name: u.User?.name,
+        email: u.User?.email,
+        avatarColor: u.User?.avatarColor,
         xp: u.xp,
         level: u.level,
         streak: u.streak,
@@ -42,6 +43,5 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Leaderboard GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }

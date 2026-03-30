@@ -266,3 +266,59 @@ Two tasks: (1) Move admin login from client-side hardcoded credentials to a serv
 - `npm run lint` passes with 0 errors (2 pre-existing alt-text warnings in unrelated `books-view.tsx` file — not introduced by this task)
 - Dev server compiles successfully with no new errors
 - All 47 nav items preserved (45 original + same count in new categorized structure)
+
+---
+## Task ID: supabase-migration - migration-agent
+### Work Task
+Migrate all API routes in `/home/z/my-project/src/app/api/` from Prisma ORM (`db` from `@/lib/db`) to Supabase REST API (`supabase` from `@/lib/supabase`). The login route was already migrated as a reference pattern.
+
+### Work Summary
+
+**7 files migrated (login was already done):**
+
+**1. `src/app/api/auth/register/route.ts`**
+- Replaced `import { db } from '@/lib/db'` with `import { supabase } from '@/lib/supabase'`
+- `db.user.findUnique({ where: { email } })` → `supabase.from('User').select('*').eq('email', email).single()`
+- `db.user.create({ data: {..., progress: { create: {...} } } })` → Two-step: `supabase.from('User').insert({...}).select().single()` then `supabase.from('UserProgress').insert({...})`
+- Removed empty `finally` block
+
+**2. `src/app/api/auth/session/route.ts`**
+- `db.user.findUnique({ where: { id }, include: { progress: true } })` → `supabase.from('User').select('*, UserProgress(*)').eq('id', id).single()`
+- Progress extracted from nested relation: `(user.UserProgress as any)?.[0] || null`
+- Removed empty `finally` block
+
+**3. `src/app/api/auth/seed/route.ts`**
+- `db.user.findUnique({ where: { email } })` → `supabase.from('User').select('*').eq('email', email).single()`
+- `db.user.create({ data: {..., progress: { create: {...} } } })` → Two-step: insert User then fetch back, then insert UserProgress
+- Removed empty `finally` block
+
+**4. `src/app/api/progress/route.ts`**
+- GET: `db.userProgress.findUnique({ where: { userId } })` → `supabase.from('UserProgress').select('*').eq('userId', userId).single()`
+- GET: `db.studyDate.findMany({ where: { userId }, orderBy: { date: 'asc' } })` → `supabase.from('StudyDate').select('*').eq('userId', userId).order('date', { ascending: true })`
+- PUT: `db.userProgress.upsert(...)` → Check-exists-then-update-or-insert pattern (fetch → if exists update, else insert)
+- PUT: `db.studyDate.deleteMany(...)` → `supabase.from('StudyDate').delete().eq('userId', userId)`
+- PUT: `db.studyDate.createMany({ data: [...] })` → `supabase.from('StudyDate').insert([...])`
+- Removed empty `finally` blocks
+
+**5. `src/app/api/leaderboard/route.ts`**
+- `db.userProgress.findMany({ include: { user: {...} }, orderBy: { xp: 'desc' }, take: 20 })` → `supabase.from('UserProgress').select('*, User(id, name, email, avatarColor, joinedDate)').order('xp', { ascending: false }).limit(20)`
+- User data accessed via `u.User?.name` instead of `u.user.name`
+- Removed empty `finally` block
+
+**6. `src/app/api/community/posts/route.ts`**
+- GET: `db.communityPost.findMany({ include: { user, votes: { where: { userId } } }, ... })` → `supabase.from('CommunityPost').select('*, User(...), PostVote(userId, voteType)').order('createdAt', { ascending: false }).limit(50)` with client-side vote filtering
+- GET: `db.user.count()` / `db.communityPost.count()` → `supabase.from('Table').select('*', { count: 'exact', head: true })`
+- POST: `db.communityPost.create({ data: {...}, include: { user } })` → `supabase.from('CommunityPost').insert({...}).select('*, User(name, email, avatarColor)').single()`
+- `post.createdAt.toISOString()` → `post.createdAt` (Supabase returns ISO strings directly)
+- Removed empty `finally` blocks
+
+**7. `src/app/api/admin/users/route.ts`**
+- `db.user.findMany({ include: { progress, payments, posts }, ... })` → `supabase.from('User').select('*, UserProgress(...), Payment(...), CommunityPost(id)').order('createdAt', { ascending: false }).limit(50)`
+- User data accessed via nested arrays: `u.UserProgress?.[0]?.xp`, `u.Payment?.length`, `u.CommunityPost?.length`
+- Stats (count queries + activeToday) fetched in parallel with `Promise.all()`
+- `activeToday` (count users with lastStudyDate = today) → Fetch matching UserProgress records, count distinct userIds using `new Set()`
+- Removed empty `finally` block
+
+**Verification:**
+- `npm run lint` passes with 0 errors (only 2 pre-existing alt-text warnings in unrelated `books-view.tsx`)
+- Dev server compiles successfully with no new errors

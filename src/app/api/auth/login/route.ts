@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyPassword, createToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,12 +16,13 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await db.user.findUnique({
-      where: { email: normalizedEmail },
-      include: { progress: true },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .select('*, UserProgress(*)')
+      .eq('email', normalizedEmail)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
       return NextResponse.json({ success: false, error: 'Invalid email or password.' }, { status: 401 });
     }
 
@@ -32,7 +31,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid email or password.' }, { status: 401 });
     }
 
-    // Create JWT token
+    const progress = (user.UserProgress as any)?.[0] || null;
+
     const token = await createToken({
       userId: user.id,
       email: user.email,
@@ -51,14 +51,13 @@ export async function POST(request: NextRequest) {
         avatarColor: user.avatarColor,
         profilePicture: user.profilePicture,
         joinedDate: user.joinedDate,
-        xp: user.progress?.xp || 0,
-        level: user.progress?.level || 1,
-        streak: user.progress?.streak || 0,
+        xp: progress?.xp || 0,
+        level: progress?.level || 1,
+        streak: progress?.streak || 0,
       },
     });
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json({ success: false, error: 'Server error. Please try again.' }, { status: 500 });
-  } finally {
   }
 }

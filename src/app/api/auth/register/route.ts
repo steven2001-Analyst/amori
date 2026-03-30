@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { hashPassword } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +22,12 @@ export async function POST(request: NextRequest) {
     const normalizedName = name.trim();
 
     // Check if user exists
-    const existingUser = await db.user.findUnique({ where: { email: normalizedEmail } });
+    const { data: existingUser, error: existingError } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .single();
+
     if (existingUser) {
       return NextResponse.json({ success: false, error: 'An account with this email already exists.' }, { status: 409 });
     }
@@ -34,24 +37,32 @@ export async function POST(request: NextRequest) {
     const avatarColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
     const avatarColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
 
-    const user = await db.user.create({
-      data: {
+    const { data: user, error: createError } = await supabase
+      .from('User')
+      .insert({
         name: normalizedName,
         email: normalizedEmail,
         passwordHash,
         avatarColor,
         joinedDate: new Date().toISOString().split('T')[0],
-        progress: {
-          create: {
-            completedTopics: '[]',
-            streak: 0,
-            xp: 0,
-            level: 1,
-            quizHighScore: 0,
-            totalStudyMinutes: 0,
-          },
-        },
-      },
+      })
+      .select()
+      .single();
+
+    if (createError || !user) {
+      console.error('User creation error:', createError);
+      return NextResponse.json({ success: false, error: 'Failed to create user.' }, { status: 500 });
+    }
+
+    // Create progress record for the user
+    await supabase.from('UserProgress').insert({
+      userId: user.id,
+      completedTopics: '[]',
+      streak: 0,
+      xp: 0,
+      level: 1,
+      quizHighScore: 0,
+      totalStudyMinutes: 0,
     });
 
     return NextResponse.json({
@@ -68,6 +79,5 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json({ success: false, error: 'Server error. Please try again.' }, { status: 500 });
-  } finally {
   }
 }

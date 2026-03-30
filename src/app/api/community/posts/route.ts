@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 // GET /api/community/posts - fetch all posts with user info
 export async function GET(request: NextRequest) {
@@ -16,16 +14,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const posts = await db.communityPost.findMany({
-      include: {
-        user: { select: { id: true, name: true, email: true, avatarColor: true } },
-        votes: { where: { userId: payload.userId } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    });
+    const { data: posts, error: postsError } = await supabase
+      .from('CommunityPost')
+      .select('*, User(id, name, email, avatarColor), PostVote(userId, voteType)')
+      .order('createdAt', { ascending: false })
+      .limit(50);
 
-    const postsWithUserData = posts.map((post) => ({
+    if (postsError) {
+      console.error('Posts query error:', postsError);
+      return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+    }
+
+    const postsWithUserData = (posts || []).map((post: any) => ({
       id: post.id,
       title: post.title,
       body: post.body,
@@ -33,27 +33,33 @@ export async function GET(request: NextRequest) {
       tags: JSON.parse(post.tags || '[]'),
       upvotes: post.upvotes,
       downvotes: post.downvotes,
-      createdAt: post.createdAt.toISOString(),
+      createdAt: post.createdAt,
       user: {
-        name: post.user.name,
-        email: post.user.email,
-        avatarColor: post.user.avatarColor,
+        name: post.User?.name,
+        email: post.User?.email,
+        avatarColor: post.User?.avatarColor,
       },
-      currentUserVote: post.votes.length > 0 ? post.votes[0].voteType : null,
+      currentUserVote: (post.PostVote || []).some((v: any) => v.userId === payload.userId)
+        ? (post.PostVote || []).find((v: any) => v.userId === payload.userId)?.voteType || null
+        : null,
     }));
 
-    const totalUsers = await db.user.count();
-    const totalPosts = await db.communityPost.count();
+    const { count: totalUsers } = await supabase
+      .from('User')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: totalPosts } = await supabase
+      .from('CommunityPost')
+      .select('*', { count: 'exact', head: true });
 
     return NextResponse.json({
       success: true,
       posts: postsWithUserData,
-      stats: { totalUsers, totalPosts },
+      stats: { totalUsers: totalUsers || 0, totalPosts: totalPosts || 0 },
     });
   } catch (error) {
     console.error('Community posts GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }
 
@@ -79,18 +85,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Body is required' }, { status: 400 });
     }
 
-    const post = await db.communityPost.create({
-      data: {
+    const { data: post, error: createError } = await supabase
+      .from('CommunityPost')
+      .insert({
         userId: payload.userId,
         title: title.trim(),
         body: postBody.trim(),
         category: category || 'discussion',
         tags: JSON.stringify(tags || []),
-      },
-      include: {
-        user: { select: { name: true, email: true, avatarColor: true } },
-      },
-    });
+      })
+      .select('*, User(name, email, avatarColor)')
+      .single();
+
+    if (createError || !post) {
+      console.error('Post creation error:', createError);
+      return NextResponse.json({ success: false, error: 'Failed to create post' }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,
@@ -99,20 +109,19 @@ export async function POST(request: NextRequest) {
         title: post.title,
         body: post.body,
         category: post.category,
-        tags: JSON.parse(post.tags),
+        tags: JSON.parse(post.tags || '[]'),
         upvotes: post.upvotes,
         downvotes: post.downvotes,
-        createdAt: post.createdAt.toISOString(),
+        createdAt: post.createdAt,
         user: {
-          name: post.user.name,
-          email: post.user.email,
-          avatarColor: post.user.avatarColor,
+          name: (post.User as any)?.name,
+          email: (post.User as any)?.email,
+          avatarColor: (post.User as any)?.avatarColor,
         },
       },
     });
   } catch (error) {
     console.error('Community posts POST error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }

@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
-
-// Uses shared db instance from @/lib/db
 
 // GET - fetch user progress from database
 export async function GET(request: NextRequest) {
@@ -17,14 +15,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const progress = await db.userProgress.findUnique({
-      where: { userId: payload.userId },
-    });
+    const { data: progress, error: progressError } = await supabase
+      .from('UserProgress')
+      .select('*')
+      .eq('userId', payload.userId)
+      .single();
 
-    const studyDates = await db.studyDate.findMany({
-      where: { userId: payload.userId },
-      orderBy: { date: 'asc' },
-    });
+    const { data: studyDates, error: datesError } = await supabase
+      .from('StudyDate')
+      .select('*')
+      .eq('userId', payload.userId)
+      .order('date', { ascending: true });
 
     if (!progress) {
       return NextResponse.json({
@@ -52,13 +53,12 @@ export async function GET(request: NextRequest) {
         level: progress.level,
         quizHighScore: progress.quizHighScore,
         totalStudyMinutes: progress.totalStudyMinutes,
-        studyDates: studyDates.map((d) => d.date),
+        studyDates: (studyDates || []).map((d: any) => d.date),
       },
     });
   } catch (error) {
     console.error('Progress GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }
 
@@ -78,42 +78,45 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { completedTopics, streak, lastStudyDate, xp, level, quizHighScore, totalStudyMinutes, studyDates } = body;
 
-    // Upsert progress
-    await db.userProgress.upsert({
-      where: { userId: payload.userId },
-      update: {
-        completedTopics: JSON.stringify(completedTopics || []),
-        streak: streak ?? 0,
-        lastStudyDate: lastStudyDate || null,
-        xp: xp ?? 0,
-        level: level ?? 1,
-        quizHighScore: quizHighScore ?? 0,
-        totalStudyMinutes: totalStudyMinutes ?? 0,
-      },
-      create: {
-        userId: payload.userId,
-        completedTopics: JSON.stringify(completedTopics || []),
-        streak: streak ?? 0,
-        lastStudyDate: lastStudyDate || null,
-        xp: xp ?? 0,
-        level: level ?? 1,
-        quizHighScore: quizHighScore ?? 0,
-        totalStudyMinutes: totalStudyMinutes ?? 0,
-      },
-    });
+    const progressData = {
+      completedTopics: JSON.stringify(completedTopics || []),
+      streak: streak ?? 0,
+      lastStudyDate: lastStudyDate || null,
+      xp: xp ?? 0,
+      level: level ?? 1,
+      quizHighScore: quizHighScore ?? 0,
+      totalStudyMinutes: totalStudyMinutes ?? 0,
+    };
+
+    // Upsert progress: check if exists, then update or create
+    const { data: existingProgress } = await supabase
+      .from('UserProgress')
+      .select('*')
+      .eq('userId', payload.userId)
+      .single();
+
+    if (existingProgress) {
+      await supabase
+        .from('UserProgress')
+        .update(progressData)
+        .eq('userId', payload.userId);
+    } else {
+      await supabase
+        .from('UserProgress')
+        .insert({ userId: payload.userId, ...progressData });
+    }
 
     // Sync study dates (delete old, insert new)
     if (Array.isArray(studyDates) && studyDates.length > 0) {
-      await db.studyDate.deleteMany({ where: { userId: payload.userId } });
-      await db.studyDate.createMany({
-        data: studyDates.map((date: string) => ({ userId: payload.userId, date })),
-      });
+      await supabase.from('StudyDate').delete().eq('userId', payload.userId);
+      await supabase.from('StudyDate').insert(
+        studyDates.map((date: string) => ({ userId: payload.userId, date }))
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Progress PUT error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
-  } finally {
   }
 }
