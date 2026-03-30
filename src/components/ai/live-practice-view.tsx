@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Question {
   question: string;
@@ -79,10 +80,88 @@ export default function LivePracticeView() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const questionRef = useRef<Question | null>(null);
   const showResultRef = useRef(false);
+  const aiQuestionCache = useRef<Record<string, Question[]>>({});
 
   // Keep refs in sync
   useEffect(() => { questionRef.current = question; }, [question]);
   useEffect(() => { showResultRef.current = showResult; }, [showResult]);
+
+  const generateQuestion = useCallback(async (topicId: string) => {
+    setIsLoading(true);
+    setSelectedAnswer(null);
+    setShowResult(false);
+    setTimeLeft(30);
+
+    const seedQuestions = SEED_QUESTIONS[topicId] || [];
+    // Pick a random seed question
+    if (seedQuestions.length > 0 && Math.random() < 0.4) {
+      const randomQ = seedQuestions[Math.floor(Math.random() * seedQuestions.length)];
+      setQuestion(randomQ);
+      setIsLoading(false);
+      return;
+    }
+
+    // Try AI-generated question
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const res = await fetch('/api/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Generate a single multiple-choice quiz question about ${topicId} for data analytics. The question should test practical knowledge. Return ONLY a JSON object with these exact keys: "question" (string), "options" (array of exactly 4 strings), "correct" (number 0-3, the index of the correct option), "explanation" (string explaining why the answer is correct), "difficulty" ("easy", "medium", or "hard"). No other text.`,
+          context: 'You are a data analytics quiz generator. Return valid JSON only.',
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await res.json();
+      let reply = data.reply || '';
+
+      // Parse JSON from reply
+      const jsonMatch = reply.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        toast.success('AI question generated');
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.question && parsed.options && parsed.options.length === 4 && typeof parsed.correct === 'number') {
+          const q: Question = {
+            question: parsed.question,
+            options: parsed.options,
+            correct: parsed.correct,
+            explanation: parsed.explanation || 'The correct answer has been verified by our system.',
+            difficulty: parsed.difficulty || 'medium',
+          };
+          setQuestion(q);
+          // Cache it
+          if (!aiQuestionCache.current[topicId]) aiQuestionCache.current[topicId] = [];
+          aiQuestionCache.current[topicId].push(q);
+          setIsLoading(false);
+          return;
+        }
+      }
+      throw new Error('Invalid AI response');
+    } catch {
+      // Fallback: use seed or cached questions
+      const cached = aiQuestionCache.current[topicId] || [];
+      const allAvailable = [...seedQuestions, ...cached];
+      if (allAvailable.length > 0) {
+        const fallback = allAvailable[Math.floor(Math.random() * allAvailable.length)];
+        setQuestion(fallback);
+        toast.info('AI unavailable — showing practice question');
+      } else {
+        setQuestion({
+          question: `What is a key concept in ${topicId}?`,
+          options: ['Data cleaning', 'Data modeling', 'Data visualization', 'All of the above'],
+          correct: 3,
+          explanation: 'All these are fundamental concepts in data analytics workflows.',
+          difficulty: 'easy',
+        });
+      }
+    }
+    setIsLoading(false);
+  }, []);
 
   const handleAnswer = useCallback((answerIdx: number) => {
     if (showResultRef.current || !questionRef.current) return;

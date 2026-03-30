@@ -56,6 +56,7 @@ export default function AISQLAssistantView() {
     setGeneratedSQL('');
 
     const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
       const response = await fetch('/api/ai-chat', {
@@ -67,10 +68,12 @@ export default function AISQLAssistantView() {
         signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) throw new Error('API request failed');
 
       const data = await response.json();
-      let sql = data.message || '';
+      let sql = data.reply || '';
 
       // Clean up markdown code blocks if present
       sql = sql.replace(/```sql\n?/gi, '').replace(/```\n?/g, '').trim();
@@ -91,7 +94,7 @@ export default function AISQLAssistantView() {
 
       setGeneratedSQL(sql);
       setHistory(prev => [{ query: text, sql }, ...prev.slice(0, 9)]);
-    } catch {
+    } catch (err: unknown) {
       // Fallback logic
       const lowerText = text.toLowerCase();
       let fallback = 'SELECT * FROM employees LIMIT 10;';
@@ -102,8 +105,10 @@ export default function AISQLAssistantView() {
         }
       }
       setGeneratedSQL(fallback);
-      toast.info('AI is unavailable. Showing a suggested query based on your description.');
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      toast.info(isTimeout ? 'AI timed out. Showing a suggested query based on your description.' : 'AI is unavailable. Showing a suggested query based on your description.');
     } finally {
+      clearTimeout(timeoutId);
       setIsGenerating(false);
     }
 

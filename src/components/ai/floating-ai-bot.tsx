@@ -432,6 +432,38 @@ If you need anything else, just type a keyword like \`help\` for a full list of 
 Or try one of the quick action buttons below! 👇`;
 }
 
+// ─── Smart Fallback (keyword-based for API failures) ───
+function getSmartFallback(input: string): string {
+  const lower = input.toLowerCase();
+
+  if (lower.includes('sql') || lower.includes('query') || lower.includes('database') || lower.includes('select')) {
+    return `📊 **SQL Quick Guide**\n\nHere's what I can tell you about SQL:\n\n• **SELECT** — retrieves data from tables\n• **WHERE** — filters rows by conditions\n• **JOIN** — combines data from multiple tables\n• **GROUP BY** — aggregates data into groups\n• **ORDER BY** — sorts your results\n\nTry our **AI SQL Assistant** in the Study section to generate SQL from plain English!\n\n💡 Type **"help"** for more topics.`;
+  }
+  if (lower.includes('python') || lower.includes('pandas') || lower.includes('numpy') || lower.includes('dataframe')) {
+    return `🐍 **Python for Data Analytics**\n\nKey libraries you should know:\n\n• **pandas** — Data manipulation with DataFrames\n• **numpy** — Numerical computing & arrays\n• **matplotlib** — Create charts and visualizations\n• **scikit-learn** — Machine learning models\n\n**Quick example:**\n\`df.groupby('department')['salary'].mean()\`\n\n💡 Visit the **AI Tutor** for in-depth Python help!`;
+  }
+  if (lower.includes('excel') || lower.includes('vlookup') || lower.includes('pivot') || lower.includes('spreadsheet')) {
+    return `📊 **Excel for Analytics**\n\nEssential functions:\n\n• **VLOOKUP/XLOOKUP** — Find values in tables\n• **INDEX/MATCH** — Flexible lookups\n• **SUMIFS/COUNTIFS** — Conditional calculations\n• **Pivot Tables** — Summarize data instantly\n\n**Pro tip:** Use \`Ctrl+T\` to convert ranges to Tables for dynamic formulas!\n\n💡 Check the **Study Path** for Excel tutorials!`;
+  }
+  if (lower.includes('power bi') || lower.includes('dax') || lower.includes('dashboard')) {
+    return `📈 **Power BI Essentials**\n\nCore components:\n\n• **Power Query** — Transform & clean data (M language)\n• **DAX** — Create custom calculations\n• **Data Model** — Build relationships between tables\n• **Visualizations** — Charts, maps, KPIs\n\n**Best practice:** Use a star schema with one fact table + dimension tables.\n\n💡 Explore the **AI Tutor** for Power BI deep dives!`;
+  }
+  if (lower.includes('machine learning') || lower.includes('ml') || lower.includes('model') || lower.includes('predict')) {
+    return `🤖 **Machine Learning Basics**\n\nTypes of ML:\n\n• **Supervised** — Labeled data (classification, regression)\n• **Unsupervised** — No labels (clustering, PCA)\n\n**Workflow:** Collect data → Clean → Feature engineering → Train → Evaluate\n\n**Popular algorithms:** Random Forest, Gradient Boosting, Neural Networks\n\n💡 Try the **AI Career Advisor** for ML career paths!`;
+  }
+  if (lower.includes('statistic') || lower.includes('mean') || lower.includes('probability') || lower.includes('average')) {
+    return `📐 **Statistics Quick Reference**\n\n**Key measures:**\n• **Mean** — Average (sensitive to outliers)\n• **Median** — Middle value (robust)\n• **Std Dev** — How spread out data is\n• **Correlation** — Relationship between variables\n\n**Common tests:** T-test, Chi-square, ANOVA\n\n💡 Significance level α = 0.05 means 95% confidence!`;
+  }
+  if (lower.includes('career') || lower.includes('job') || lower.includes('resume') || lower.includes('interview') || lower.includes('salary')) {
+    return `💼 **Data Career Guide**\n\n**Top roles & salary ranges:**\n• Data Analyst — $65K-$95K\n• Data Scientist — $95K-$140K\n• Data Engineer — $110K-$160K\n• BI Developer — $70K-$110K\n\n**Most in-demand skills:** SQL, Python, Tableau/Power BI, Statistics, Cloud\n\n💡 Use the **AI Career Advisor** for personalized recommendations!`;
+  }
+  if (lower.includes('tableau') || lower.includes('visualization') || lower.includes('chart') || lower.includes('graph')) {
+    return `📊 **Data Visualization Tips**\n\n**Top tools:** Tableau, Power BI, matplotlib, seaborn\n\n**Best practices:**\n• Choose the right chart type for your data\n• Use color intentionally (not just to make it pretty)\n• Keep it simple — remove chart junk\n• Label clearly and add context\n\n💡 Visit the **Study Path** for visualization courses!`;
+  }
+
+  return `🤔 I couldn't reach my AI brain just now, but here's what you can do:\n\n• Type **"help"** to see all topics I can explain instantly\n• Try the **AI Tutor** in the Study section for detailed help\n• Visit the **AI SQL Assistant** for SQL query help\n\nOr try asking about: **SQL**, **Python**, **Excel**, **Power BI**, **Statistics**, **Machine Learning**, or **Careers**`;
+}
+
 // ─── Quick Action Buttons ───
 const quickActions = [
   { label: '🎯 Dashboard Guide', keyword: 'dashboard' },
@@ -575,7 +607,7 @@ export default function FloatingAIBot() {
 
     // General questions → call the real AI API
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
     try {
       const res = await fetch('/api/ai-chat', {
@@ -596,22 +628,24 @@ export default function FloatingAIBot() {
         };
         setMessages((prev) => [...prev, botMsg]);
       } else {
-        // API returned no reply — use generic fallback
+        // API returned no reply — use smart keyword fallback
+        const smartReply = getSmartFallback(trimmed);
         const botMsg: ChatMessage = {
           id: `msg-bot-${Date.now()}`,
           role: 'bot',
-          content: `Hmm, I couldn't get an answer for that. Try rephrasing your question, or type **"help"** to see what I can assist with!`,
+          content: smartReply,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, botMsg]);
       }
     } catch {
       clearTimeout(timeoutId);
-      // API call failed (timeout, network, etc.) — use generic fallback
+      // API call failed (timeout, network, etc.) — use smart keyword fallback
+      const smartReply = getSmartFallback(trimmed);
       const botMsg: ChatMessage = {
         id: `msg-bot-${Date.now()}`,
         role: 'bot',
-        content: `Sorry, I'm having trouble connecting to my AI brain right now. \n\nIn the meantime, try typing **"help"** for a list of topics I can explain instantly!`,
+        content: smartReply,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMsg]);

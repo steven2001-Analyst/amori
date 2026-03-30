@@ -18,6 +18,8 @@ import {
   Github,
   Quote,
   Sparkles,
+  ShieldAlert,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +78,7 @@ export default function AuthView() {
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regError, setRegError] = useState('');
 
-  const { loginUser, registerUser } = useProgressStore();
+  const { loginUser, registerUser, isLocked, checkLockStatus, resetFailedAttempts } = useProgressStore();
 
   const passwordStrength = useMemo(() => getPasswordStrength(regPassword), [regPassword]);
 
@@ -85,16 +87,34 @@ export default function AuthView() {
     setLoginError('');
     setIsLoading(true);
 
-    await new Promise((r) => setTimeout(r, 250));
+    try {
+      await new Promise((r) => setTimeout(r, 250));
 
-    const result = loginUser(loginEmail, loginPassword);
+      const result = loginUser(loginEmail, loginPassword);
 
-    if (result.success) {
+      if (result.success) {
+        toast.success('Welcome back!', { description: 'You have been logged in successfully.' });
+      } else {
+        // Provide clearer error messages
+        let errorMsg = result.error || 'Login failed.';
+        if (errorMsg.includes('locked')) {
+          errorMsg = 'Too many failed attempts. Your account is temporarily locked. Click the button below to reset and try again.';
+        } else if (errorMsg.includes('Invalid') || errorMsg.includes('password')) {
+          errorMsg = 'Incorrect email or password. Please check your credentials and try again.';
+        }
+        setLoginError(errorMsg);
+      }
+    } catch {
+      setLoginError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-      toast.success('Welcome back!', { description: 'You have been logged in successfully.' });
-    } else {
-      setLoginError(result.error || 'Login failed.');
     }
+  };
+
+  const handleResetLock = () => {
+    resetFailedAttempts();
+    setLoginError('');
+    toast.success('Lock reset', { description: 'You can now try logging in again.' });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -107,21 +127,27 @@ export default function AuthView() {
     }
 
     setIsLoading(true);
-    await new Promise((r) => setTimeout(r, 250));
 
-    const result = registerUser(regName, regEmail, regPassword);
+    try {
+      await new Promise((r) => setTimeout(r, 250));
 
-    if (result.success) {
+      const result = registerUser(regName, regEmail, regPassword);
+
+      if (result.success) {
+        toast.success('Account created!', { description: 'You can now log in with your credentials.' });
+        setActiveTab('login');
+        setLoginEmail(regEmail);
+        setRegName('');
+        setRegEmail('');
+        setRegPassword('');
+        setRegConfirmPassword('');
+      } else {
+        setRegError(result.error || 'Registration failed.');
+      }
+    } catch {
+      setRegError('An unexpected error occurred. Please try again.');
+    } finally {
       setIsLoading(false);
-      toast.success('Account created!', { description: 'You can now log in with your credentials.' });
-      setActiveTab('login');
-      setLoginEmail(regEmail);
-      setRegName('');
-      setRegEmail('');
-      setRegPassword('');
-      setRegConfirmPassword('');
-    } else {
-      setRegError(result.error || 'Registration failed.');
     }
   };
 
@@ -375,10 +401,24 @@ export default function AuthView() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 flex items-center gap-2"
+                          className="space-y-3"
                         >
-                          <X className="w-4 h-4 shrink-0" />
-                          {loginError}
+                          <div className="bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 text-sm rounded-xl px-4 py-3 flex items-center gap-2">
+                            <ShieldAlert className="w-4 h-4 shrink-0" />
+                            <span className="flex-1">{loginError}</span>
+                          </div>
+                          {(loginError.includes('locked') || loginError.includes('Incorrect')) && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleResetLock}
+                              className="w-full rounded-xl border-red-200 dark:border-red-900 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 gap-2"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                              {loginError.includes('locked') ? 'Reset Account Lock & Try Again' : 'Try Again'}
+                            </Button>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>

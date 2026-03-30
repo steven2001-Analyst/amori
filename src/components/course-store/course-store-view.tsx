@@ -17,6 +17,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useProgressStore } from '@/lib/store';
+import dynamic from 'next/dynamic';
+const CourseContentView = dynamic(() => import('@/components/course-store/course-content-view'));
 
 // ─── Course Data ───
 interface Course {
@@ -357,6 +359,7 @@ export default function CourseStoreView() {
   const [showCart, setShowCart] = useState(false);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'popular' | 'price-low' | 'price-high' | 'rating'>('popular');
+  const [viewCourseId, setViewCourseId] = useState<string | null>(null);
 
   const filteredCourses = useMemo(() => {
     let filtered = courses.filter((c) => {
@@ -443,6 +446,10 @@ export default function CourseStoreView() {
       </div>
     );
   };
+
+  if (viewCourseId) {
+    return <CourseContentView courseId={viewCourseId} onBack={() => setViewCourseId(null)} />;
+  }
 
   return (
     <div className="p-4 lg:p-6 space-y-6 max-w-7xl mx-auto">
@@ -665,8 +672,8 @@ export default function CourseStoreView() {
                     </div>
                     <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       {isPurchased(course.id) ? (
-                        <Button size="sm" className="h-8 text-xs bg-emerald-500 hover:bg-emerald-600 text-white">
-                          <Play className="w-3 h-3 mr-1" /> Watch Now
+                        <Button size="sm" className="h-8 text-xs bg-emerald-500 hover:bg-emerald-600 text-white" onClick={(e) => { e.stopPropagation(); setViewCourseId(course.id); }}>
+                          <Play className="w-3 h-3 mr-1" /> Open Course
                         </Button>
                       ) : (
                         <>
@@ -778,8 +785,8 @@ export default function CourseStoreView() {
                     )}
                   </div>
                   {isPurchased(selectedCourse.id) ? (
-                    <Button className="flex-1 h-11 bg-emerald-500 hover:bg-emerald-600 text-white">
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Access Course
+                    <Button className="flex-1 h-11 bg-emerald-500 hover:bg-emerald-600 text-white" onClick={(e) => { e.preventDefault(); setSelectedCourse(null); setViewCourseId(selectedCourse.id); }}>
+                      <Play className="w-4 h-4 mr-2" /> Open Course
                     </Button>
                   ) : (
                     <Button

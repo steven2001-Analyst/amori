@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -140,6 +141,50 @@ function getSuggestions(text: string): string[] {
   return ['Getting Started Guide', 'Practice Problems', 'Career Tips', 'Study Plan'];
 }
 
+function generateTutorFallback(input: string, simple: boolean): string {
+  const lower = input.toLowerCase();
+
+  if (lower.includes('sql') || lower.includes('query') || lower.includes('database') || lower.includes('select')) {
+    return simple
+      ? "SQL is like a magic language for talking to databases! Imagine you have a huge toy box and you want to find all the red cars. You'd say: 'Hey toy box, **SELECT** all toys WHERE color = red'. That's basically SQL!"
+      : "**SQL (Structured Query Language)** is the standard language for interacting with relational databases.\n\n**Key Concepts:**\n- `SELECT` - retrieves columns from a table\n- `WHERE` - filters rows based on conditions\n- `JOIN` - combines rows from two or more tables\n- `GROUP BY` - groups rows with same values\n- `ORDER BY` - sorts the result set\n\n**Example:**\n```sql\nSELECT department, COUNT(*) as employee_count, AVG(salary) as avg_salary\nFROM employees\nGROUP BY department\nHAVING COUNT(*) > 5\nORDER BY avg_salary DESC;\n```\n\n**Tips:** Always use `WHERE` before `GROUP BY`, and `HAVING` after `GROUP BY` for filtering on aggregates.";
+  }
+  if (lower.includes('python') || lower.includes('pandas') || lower.includes('dataframe') || lower.includes('numpy')) {
+    return simple
+      ? "Python is like a super-powered calculator! Imagine you have a magic notebook where you can write instructions and it does the math instantly. `pandas` is like having a super-smart assistant that organizes all your data into neat little tables!"
+      : "**Python for Data Science** is the most versatile language for analytics.\n\n**Essential Libraries:**\n- `pandas` - Data manipulation with DataFrames\n- `numpy` - Numerical computing and array operations\n- `matplotlib` / `seaborn` - Data visualization\n- `scikit-learn` - Machine learning\n\n**Common Operations:**\n```python\nimport pandas as pd\n\n# Read data\ndf = pd.read_csv('data.csv')\n\n# Filter rows\nhigh_salary = df[df['salary'] > 90000]\n\n# Group and aggregate\nsummary = df.groupby('department')['salary'].agg(['mean', 'median', 'count'])\n\n# Handle missing values\ndf.fillna(df.mean(), inplace=True)\n```\n\n**Pro tip:** Use `df.info()` and `df.describe()` as your first steps when exploring any new dataset.";
+  }
+  if (lower.includes('excel') || lower.includes('vlookup') || lower.includes('pivot') || lower.includes('spreadsheet')) {
+    return simple
+      ? "Excel is like a digital piece of graph paper where each little box can hold numbers, words, or formulas! It's like a calculator that remembers everything. You can use special words like VLOOKUP to find things, like searching for a friend's phone number in a list!"
+      : "**Advanced Excel for Analytics** goes far beyond basic spreadsheets.\n\n**Must-Know Functions:**\n- `VLOOKUP` / `XLOOKUP` - Find values in a table\n- `INDEX/MATCH` - More flexible lookup alternative\n- `SUMIFS` / `COUNTIFS` - Conditional aggregation\n- `IFERROR` - Graceful error handling\n\n**Power Query** is Excel's ETL tool for data transformation.\n\n**Pivot Tables** allow you to summarize thousands of rows in seconds.\n\n**Example Dashboard Formula:**\n```excel\n=SUMIFS(Sales[Amount], Sales[Region], A2, Sales[Date], ">="&DATE(2025,1,1))\n```\n\n**Tip:** Use Ctrl+T to convert ranges to Tables for dynamic referencing.";
+  }
+  if (lower.includes('power bi') || lower.includes('dax') || lower.includes('dashboard') || lower.includes('visualization')) {
+    return simple
+      ? "Power BI is like making a picture book from your numbers! Instead of boring rows and columns, you get colorful charts and graphs that tell a story. Imagine turning your grocery list into a beautiful pie chart showing what you buy most!"
+      : "**Power BI** is Microsoft's leading business intelligence tool.\n\n**Core Components:**\n- **Power Query** - Data extraction and transformation (M language)\n- **DAX** - Data Analysis Expressions for custom calculations\n- **Data Model** - Define relationships between tables\n- **Report View** - Build interactive visualizations\n\n**Essential DAX Measures:**\n```dax\nTotal Sales = SUM(Sales[Amount])\nYoY Growth = DIVIDE([Total Sales] - CALCULATE([Total Sales], SAMEPERIODLASTYEAR('Date'[Date])), CALCULATE([Total Sales], SAMEPERIODLASTYEAR('Date'[Date])))\n```\n\n**Best Practices:**\n- Use star schema (one fact table + dimension tables)\n- Mark your date table for time intelligence\n- Use bookmarks for interactive storytelling";
+  }
+  if (lower.includes('statistic') || lower.includes('mean') || lower.includes('probability') || lower.includes('hypothesis')) {
+    return simple
+      ? "Statistics is like being a detective with numbers! If you have 10 cookies and 3 are chocolate chip, you can figure out the 'average' or 'mean' cookie type. It helps us make smart guesses about things when we don't know everything!"
+      : "**Statistics** is the foundation of data analytics.\n\n**Key Measures:**\n- **Mean** - Average value (sensitive to outliers)\n- **Median** - Middle value (robust to outliers)\n- **Standard Deviation** - Measure of spread/dispersion\n- **Correlation** - Relationship between two variables (-1 to 1)\n\n**Hypothesis Testing Steps:**\n1. State null hypothesis (H₀) and alternative (H₁)\n2. Choose significance level (α = 0.05)\n3. Calculate test statistic\n4. Find p-value\n5. If p < α, reject H₀\n\n**Common Tests:**\n- T-test: Compare means of two groups\n- Chi-square: Test categorical associations\n- ANOVA: Compare means of 3+ groups\n\n**Tip:** Always check assumptions (normality, equal variance) before running tests.";
+  }
+  if (lower.includes('machine learning') || lower.includes('ml') || lower.includes('model') || lower.includes('predict')) {
+    return simple
+      ? "Machine learning is like teaching a computer to recognize patterns! If you show a computer 100 pictures of cats and 100 pictures of dogs, it learns the difference. Then when you show it a new picture, it can guess: 'That's a cat!'"
+      : "**Machine Learning for Data Analysts**\n\n**Types of ML:**\n- **Supervised Learning** - Labeled data (regression, classification)\n- **Unsupervised Learning** - No labels (clustering, dimensionality reduction)\n\n**Workflow:**\n1. Define the problem\n2. Collect and clean data\n3. Feature engineering\n4. Train/test split (typically 80/20)\n5. Train model\n6. Evaluate metrics\n\n**Key Metrics:**\n- Regression: RMSE, MAE, R²\n- Classification: Accuracy, Precision, Recall, F1-Score\n\n```python\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.metrics import classification_report\n\nmodel = RandomForestClassifier(n_estimators=100)\nmodel.fit(X_train, y_train)\nprint(classification_report(y_test, model.predict(X_test)))\n```";
+  }
+  if (lower.includes('career') || lower.includes('job') || lower.includes('resume') || lower.includes('interview')) {
+    return simple
+      ? "Getting a data job is like going on a quest! You need to collect 'skill badges' (learn SQL, Python, Excel), show your 'treasure' (portfolio projects), and then impress the 'gatekeepers' (interviewers) with your knowledge!"
+      : "**Career Guide for Data Analytics**\n\n**In-Demand Skills (2025):**\n1. SQL - Every data role requires it\n2. Python/R - For analysis and automation\n3. Data Visualization - Tableau, Power BI\n4. Statistics & A/B Testing\n5. Cloud Platforms - AWS, GCP\n\n**Top Data Roles:**\n- Data Analyst ($65K-$95K)\n- Data Scientist ($95K-$140K)\n- Data Engineer ($110K-$160K)\n- BI Analyst ($70K-$110K)\n\n**Interview Tips:**\n- Practice SQL on LeetCode/HackerRank\n- Build 2-3 portfolio projects\n- Know your statistics fundamentals\n- Prepare case study frameworks\n\n**Portfolio Ideas:**\n- End-to-end sales dashboard\n- Customer churn analysis\n- A/B test analysis with recommendations";
+  }
+
+  return simple
+    ? "That's a great question! Let me think about it in a simple way. Data analytics is all about finding patterns and stories hidden in numbers. Every time you organize, sort, or compare information, you're doing data analytics! What specific topic would you like to explore more?"
+    : "Great question! Here's a structured approach:\n\n**1. Understand the Problem**\nDefine what you're trying to find out clearly.\n\n**2. Gather Data**\nIdentify your data sources and collect relevant datasets.\n\n**3. Clean & Prepare**\nHandle missing values, remove duplicates, standardize formats.\n\n**4. Analyze**\nApply statistical methods, create visualizations, find patterns.\n\n**5. Communicate**\nPresent findings with clear visualizations and actionable recommendations.\n\nWould you like me to dive deeper into any of these steps, or do you have a specific topic in mind? I can help with **SQL**, **Python**, **Excel**, **Power BI**, **Statistics**, or **Machine Learning**.";
+}
+
 export default function AITutorView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -177,6 +222,9 @@ export default function AITutorView() {
         ? 'You are a patient, friendly tutor who explains data analytics concepts like I am 5 years old. Use very simple language, fun analogies, and short sentences. Avoid jargon. Make it fun and easy to understand. Keep responses concise.'
         : 'You are an expert data analytics tutor. Provide clear, well-structured answers with code examples when helpful. Use markdown formatting. Be thorough but focused.';
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -184,10 +232,18 @@ export default function AITutorView() {
           messages: conversationMessages,
           context: systemPrompt,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       const data = await res.json();
-      const reply = data.reply || 'Sorry, I could not generate a response. Please try again.';
+      let reply = data.reply;
+
+      if (!reply || reply.trim() === '') {
+        toast.info('AI is busy — showing educational content');
+        reply = generateTutorFallback(content, eli5);
+      }
 
       const aiMsg: Message = {
         id: `msg-${Date.now()}-ai`,
@@ -198,13 +254,19 @@ export default function AITutorView() {
 
       setMessages(prev => [...prev, aiMsg]);
       setSuggestedTopics(aiMsg.topics || []);
-    } catch {
+    } catch (err: unknown) {
+      const isTimeout = err instanceof Error && err.name === 'AbortError';
+      const reply = generateTutorFallback(content, eli5);
       const errMsg: Message = {
         id: `msg-${Date.now()}-err`,
         role: 'assistant',
-        content: 'Oops! Something went wrong. Please check your connection and try again.',
+        content: isTimeout
+          ? `⏱️ The AI is taking too long. Here's what I can tell you:\n\n${reply}`
+          : `🤖 AI is temporarily unavailable. Here's what I know:\n\n${reply}`,
+        topics: getSuggestions(reply),
       };
       setMessages(prev => [...prev, errMsg]);
+      setSuggestedTopics(errMsg.topics || []);
     } finally {
       setIsLoading(false);
     }

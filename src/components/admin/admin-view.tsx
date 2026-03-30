@@ -649,6 +649,102 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+/* ─── Promo Code Manager ─── */
+function PromoCodeManager() {
+  const [codes, setCodes] = useState([
+    { id: 'promo1', code: 'WELCOME20', discount: '20%', type: 'percentage', uses: 156, maxUses: 500, status: 'active', expires: '2026-06-30' },
+    { id: 'promo2', code: 'LAUNCH50', discount: '$50 off', type: 'fixed', uses: 89, maxUses: 200, status: 'active', expires: '2026-03-31' },
+    { id: 'promo3', code: 'REFER10', discount: '10%', type: 'percentage', uses: 234, maxUses: 1000, status: 'active', expires: '2026-12-31' },
+    { id: 'promo4', code: 'SUMMER25', discount: '25%', type: 'percentage', uses: 0, maxUses: 300, status: 'disabled', expires: '2026-08-31' },
+  ]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newCode, setNewCode] = useState('');
+  const [newDiscount, setNewDiscount] = useState('');
+  const [newMaxUses, setNewMaxUses] = useState('100');
+
+  const toggleCode = (id: string) => {
+    setCodes(prev => prev.map(c => c.id === id ? { ...c, status: c.status === 'active' ? 'disabled' : 'active' } : c));
+    toast.success('Promo code status toggled');
+  };
+
+  const deleteCode = (id: string) => {
+    setCodes(prev => prev.filter(c => c.id !== id));
+    toast.success('Promo code deleted');
+  };
+
+  const addCode = () => {
+    if (!newCode.trim() || !newDiscount.trim()) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+    const newPromo = {
+      id: `promo-${Date.now()}`,
+      code: newCode.trim().toUpperCase(),
+      discount: newDiscount.trim(),
+      type: newDiscount.trim().includes('$') ? 'fixed' : 'percentage',
+      uses: 0,
+      maxUses: parseInt(newMaxUses) || 100,
+      status: 'active',
+      expires: new Date(Date.now() + 90 * 86400000).toISOString().split('T')[0],
+    };
+    setCodes(prev => [...prev, newPromo]);
+    setNewCode('');
+    setNewDiscount('');
+    setNewMaxUses('100');
+    setShowAddForm(false);
+    toast.success('Promo code created successfully');
+  };
+
+  return (
+    <div className="space-y-3">
+      {!showAddForm && (
+        <Button size="sm" variant="outline" onClick={() => setShowAddForm(true)} className="gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> Add Promo Code
+        </Button>
+      )}
+      {showAddForm && (
+        <div className="flex flex-wrap gap-2 items-end p-3 rounded-xl border border-border/50 bg-muted/20">
+          <div className="space-y-1 flex-1 min-w-[120px]">
+            <Label className="text-[10px]">Code</Label>
+            <Input placeholder="e.g., SUMMER25" value={newCode} onChange={e => setNewCode(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="space-y-1 min-w-[100px]">
+            <Label className="text-[10px]">Discount</Label>
+            <Input placeholder="e.g., 20% or $10 off" value={newDiscount} onChange={e => setNewDiscount(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="space-y-1 min-w-[80px]">
+            <Label className="text-[10px]">Max Uses</Label>
+            <Input type="number" value={newMaxUses} onChange={e => setNewMaxUses(e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="flex gap-1">
+            <Button size="sm" className="h-8 text-xs bg-emerald-500 hover:bg-emerald-600 text-white" onClick={addCode}>Add</Button>
+            <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setShowAddForm(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {codes.map(code => (
+          <div key={code.id} className="flex items-center gap-3 p-3 rounded-lg border border-border/30 hover:bg-muted/30 transition-colors">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <code className="text-sm font-bold font-mono">{code.code}</code>
+                <Badge className={cn('text-[10px]', code.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500')}>{code.status}</Badge>
+              </div>
+              <p className="text-[10px] text-muted-foreground">{code.discount} off · {code.uses}/{code.maxUses} uses · Expires {code.expires}</p>
+            </div>
+            <Button size="sm" variant="outline" className={cn('h-7 w-7 p-0 shrink-0', code.status === 'active' ? 'text-amber-500' : 'text-emerald-500')} onClick={() => toggleCode(code.id)}>
+              {code.status === 'active' ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 shrink-0" onClick={() => deleteCode(code.id)}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Admin Dashboard ─── */
 export default function AdminView() {
   const store = useProgressStore();
@@ -988,6 +1084,14 @@ export default function AdminView() {
             {announcements.filter(a => a.active).length > 0 && (
               <Badge className="h-4 px-1.5 text-[10px] bg-blue-500 text-white border-0">{announcements.filter(a => a.active).length}</Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="content-mgmt" className="rounded-lg flex items-center gap-1.5">
+            Content Mgmt
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="rounded-lg flex items-center gap-1.5">
+            Payments
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
           </TabsTrigger>
           <TabsTrigger value="subscriptions" className="rounded-lg flex items-center gap-1.5">
             Subscriptions
@@ -2251,8 +2355,8 @@ export default function AdminView() {
           )}
         </TabsContent>
 
-        {/* Subscriptions Management Tab */}
-        <TabsContent value="subscriptions" className="space-y-4 mt-6">
+          {/* Subscriptions Management Tab */}
+          <TabsContent value="subscriptions" className="space-y-4 mt-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold flex items-center gap-2">

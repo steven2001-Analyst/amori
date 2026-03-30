@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { useProgressStore } from '@/lib/store';
 
 interface Milestone {
@@ -117,6 +118,9 @@ export default function PathRecommenderView() {
     setIsGenerating(true);
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const res = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -131,11 +135,19 @@ Return a numbered list with 8-12 milestones, organized in 3 phases:
 For each milestone, use bold title like: **1. Learn Data Fundamentals** and include a brief description. Include total estimated weeks.`,
           context: 'You create learning paths. Be specific and practical with real tools and skills.',
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
       const data = await res.json();
-      const reply = data.reply || '';
+      let reply = data.reply || '';
+
+      if (!reply || reply.trim() === '') {
+        throw new Error('Empty reply');
+      }
 
       const { milestones, totalDuration } = parsePlanResponse(reply);
+      toast.success('Learning path generated');
 
       const newPlan: LearningPlan = {
         id: `plan-${Date.now()}`,
@@ -150,6 +162,7 @@ For each milestone, use bold title like: **1. Learn Data Fundamentals** and incl
       setGoal('');
     } catch {
       // Create a default plan on error
+      toast.info('AI unavailable — showing default learning path');
       const newPlan: LearningPlan = {
         id: `plan-${Date.now()}`,
         goal: goal.trim(),
