@@ -90,7 +90,7 @@ The Books Library has **43 curated books** across all 8 subjects! Here's how to 
 The Chat Room is where you connect with fellow learners! Here's what's inside:
 
 • **6 Chat Rooms** — General, SQL Help, Python Help, Career Advice, Study Group, and Showcase.
-• **Real-Time Messages** — Send messages and get simulated responses from community members.
+• **Real-Time Messages** — Connect with other learners in the community.
 • **Emoji Reactions** — React to messages with 👍 ❤️ 🎉 😂 🤔 👏 🔥 💯.
 • **Full Emoji Picker** — Access 140+ emojis organized by category (Smileys, Gestures, Hearts, Objects).
 • **Reply & Forward** — Reply to specific messages or forward them to other rooms.

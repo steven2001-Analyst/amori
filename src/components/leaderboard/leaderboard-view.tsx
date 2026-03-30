@@ -282,7 +282,7 @@ export default function LeaderboardView() {
   const filteredLeaderboard = useMemo(() => {
     let entries = [...leaderboardEntries];
     if (leaderboardFilter === 'friends') {
-      entries = entries.filter((e) => ['You', 'Sarah Kim', 'Mike Johnson'].includes(e.name));
+      entries = entries.filter((e) => ['You'].includes(e.name));
     }
     return entries.sort((a, b) => b.xp - a.xp);
   }, [leaderboardEntries, leaderboardFilter]);

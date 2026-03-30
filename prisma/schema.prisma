@@ -3,42 +3,46 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  passwordHash String
-  role      String   @default("member") // "member" | "admin"
-  avatarColor String @default("#10b981")
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          String   @default("member")
+  avatarColor   String   @default("#10b981")
   profilePicture String?
-  joinedDate String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  bio           String   @default("")
+  joinedDate    String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  progress   UserProgress?
-  studyDates StudyDate[]
-  notes      UserNote[]
-  flashcards UserFlashcard[]
-  payments   Payment[]
-  posts      CommunityPost[]
-  xpHistory  XpHistory[]
+  progress       UserProgress?
+  studyDates     StudyDate[]
+  notes          UserNote[]
+  flashcards     UserFlashcard[]
+  payments       Payment[]
+  posts          CommunityPost[]
+  postVotes      PostVote[]
+  xpHistory      XpHistory[]
+  notifications  UserNotification[]
 }
 
 model UserProgress {
-  id               String  @id @default(cuid())
-  userId           String  @unique
-  completedTopics  String  // JSON array of topic IDs
-  streak           Int     @default(0)
-  lastStudyDate    String?
-  xp               Int     @default(0)
-  level            Int     @default(1)
-  quizHighScore    Int     @default(0)
-  totalStudyMinutes Int    @default(0)
-  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  completedTopics  String  @default("[]")
+  streak            Int     @default(0)
+  lastStudyDate     String?
+  xp                Int     @default(0)
+  level             Int     @default(1)
+  quizHighScore     Int     @default(0)
+  totalStudyMinutes Int     @default(0)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StudyDate {
@@ -70,16 +74,16 @@ model UserFlashcard {
 }
 
 model Payment {
-  id           String @id @default(cuid())
-  userId       String
-  plan         String @default("pro")
-  amount       Float
-  currency     String @default("usd")
-  status       String @default("verified")
-  method       String @default("card")
-  last4        String @default("")
-  transactionId String @unique
-  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  userId        String
+  plan          String   @default("pro")
+  amount        Float
+  currency      String   @default("usd")
+  status        String   @default("verified")
+  method        String   @default("card")
+  last4         String   @default("")
+  transactionId String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CommunityPost {
@@ -92,7 +96,20 @@ model CommunityPost {
   upvotes   Int      @default(0)
   downvotes Int      @default(0)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes     PostVote[]
+}
+
+model PostVote {
+  id        String @id @default(cuid())
+  userId    String
+  postId    String
+  voteType  String @default("up")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }
 
 model XpHistory {
@@ -105,13 +122,14 @@ model XpHistory {
   @@unique([userId, date])
 }
 
-// Keep Post model for backward compatibility
-model Post {
+model UserNotification {
   id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("system")
   title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
+  message   String
+  icon      String   @default("info")
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

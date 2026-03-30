@@ -149,7 +149,7 @@ function generateProducts(): Record<string, unknown>[] {
     {id:26,product_name:'Shrimp Large Frozen',category:'Meat',brand:'SeaPak',price:9.99,quantity_in_stock:85,unit:'pack',supplier:'Ocean Harvest',aisle:'C2',on_sale:false,discount_percent:0,rating:4,dietary:'none'},
     {id:27,product_name:'Bacon Thick Cut',category:'Meat',brand:'Hormel',price:7.49,quantity_in_stock:130,unit:'pack',supplier:'Meat Producers Inc',aisle:'C3',on_sale:true,discount_percent:20,rating:5,dietary:'none'},
     {id:28,product_name:'Lamb Chops',category:'Meat',brand:'Australian Lamb',price:14.99,quantity_in_stock:60,unit:'lb',supplier:'Premium Meats',aisle:'C3',on_sale:false,discount_percent:0,rating:4,dietary:'none'},
-    {id:29,product_name:'Italian Sausage',category:'Meat',brand:'Johnsonville',price:5.49,quantity_in_stock:150,unit:'pack',supplier:'Meat Producers Inc',aisle:'C3',on_sale:false,discount_percent:0,rating:4,dietary:'none'},
+    {id:29,product_name:'Pasta',category:'Food',brand:'FoodCo',price:4.99,quantity_in_stock:200,unit:'pack',supplier:'Food Distributors',aisle:'C3',on_sale:false,discount_percent:0,rating:4,dietary:'none'},
     {id:30,product_name:'Tilapia Fillets',category:'Meat',brand:'Gorton',price:6.99,quantity_in_stock:95,unit:'pack',supplier:'Ocean Harvest',aisle:'C3',on_sale:true,discount_percent:10,rating:3,dietary:'none'},
     // Bakery (10)
     {id:31,product_name:'Sourdough Bread',category:'Bakery',brand:'La Brea',price:4.99,quantity_in_stock:80,unit:'each',supplier:'Artisan Bakers',aisle:'D1',on_sale:false,discount_percent:0,rating:5,dietary:'vegan'},
@@ -281,7 +281,7 @@ function generateEmployeesHR(): Record<string, unknown>[] {
 /* ─── Sample Database ─── */
 const SAMPLE_DB: Record<string, Record<string, unknown>[]> = {
   employees: [
-    { id: 1, name: 'Alice Johnson', department: 'Engineering', salary: 95000, hire_date: '2021-03-15', city: 'New York' },
+    {id:1, name:'Student A', department:'Engineering', salary:75000, hire_date:'2024-06-15', city:'Boston'},
     { id: 2, name: 'Bob Smith', department: 'Sales', salary: 72000, hire_date: '2020-07-01', city: 'Chicago' },
     { id: 3, name: 'Carol Williams', department: 'Engineering', salary: 88000, hire_date: '2022-01-10', city: 'San Francisco' },
     { id: 4, name: 'David Brown', department: 'Marketing', salary: 68000, hire_date: '2019-11-20', city: 'New York' },

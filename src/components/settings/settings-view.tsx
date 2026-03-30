@@ -908,7 +908,7 @@ export default function SettingsView() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => toast.error('Account deletion is disabled in demo mode')}>
+                    <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => toast.error('Contact support to delete your account')}>
                       Yes, Delete Account
                     </AlertDialogAction>
                   </AlertDialogFooter>

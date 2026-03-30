@@ -961,7 +961,7 @@ Return ONLY valid JSON, no markdown, no code blocks.`;
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div className="space-y-1.5">
                                   <Label className="text-xs">Full Name</Label>
-                                  <Input placeholder="John Doe" value={resume.name} onChange={(e) => updateResume({ name: e.target.value })} className="h-9" />
+                                  <Input placeholder="Your name" value={resume.name} onChange={(e) => updateResume({ name: e.target.value })} className="h-9" />
                                 </div>
                                 <div className="space-y-1.5">
                                   <Label className="text-xs">Email</Label>

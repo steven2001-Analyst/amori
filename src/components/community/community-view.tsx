@@ -83,214 +83,12 @@ const CATEGORIES: { value: CommunityCategory; label: string; icon: React.Element
   { value: 'tips', label: 'Tips & Tricks', icon: Lightbulb, color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
 ];
 
-/* ─── Seed data ─── */
+/* ─── No more seed data — posts come from database ─── */
 function getSeedPosts(): CommunityPost[] {
-  const now = Date.now();
-  return [
-    {
-      id: 'seed-1',
-      title: 'Best resources for learning SQL window functions?',
-      body: 'I\'ve been struggling with window functions in SQL. Can anyone recommend good tutorials or practice problems? I\'ve completed the basic SQL modules but window functions feel like a whole different beast.\n\nAny tips on how to approach ROW_NUMBER(), RANK(), and DENSE_RANK() would be super helpful!',
-      author: 'Alex Chen',
-      authorColor: '#3b82f6',
-      category: 'help',
-      tags: ['sql', 'window-functions', 'learning'],
-      timestamp: now - 2 * 3600 * 1000,
-      upvotes: 24,
-      downvotes: 1,
-      userVote: null,
-      comments: [
-        {
-          id: 'seed-c1',
-          postId: 'seed-1',
-          parentId: null,
-          author: 'Sarah Kim',
-          authorColor: '#8b5cf6',
-          body: 'I highly recommend the Mode Analytics SQL tutorial on window functions. It was a game-changer for me! Also, SQLZoo has some great interactive exercises.',
-          timestamp: now - 1.5 * 3600 * 1000,
-          upvotes: 12,
-          downvotes: 0,
-          userVote: null,
-          replies: [
-            {
-              id: 'seed-c1r1',
-              postId: 'seed-1',
-              parentId: 'seed-c1',
-              author: 'Alex Chen',
-              authorColor: '#3b82f6',
-              body: 'Thanks Sarah! I\'ll check out Mode Analytics today.',
-              timestamp: now - 1 * 3600 * 1000,
-              upvotes: 3,
-              downvotes: 0,
-              userVote: null,
-              replies: [],
-            },
-          ],
-        },
-        {
-          id: 'seed-c2',
-          postId: 'seed-1',
-          parentId: null,
-          author: 'David Lee',
-          authorColor: '#f59e0b',
-          body: 'The key insight for me was understanding the OVER() clause. Think of it as defining a "window" of rows that the function operates on. Once that clicks, everything else falls into place.',
-          timestamp: now - 45 * 60 * 1000,
-          upvotes: 8,
-          downvotes: 0,
-          userVote: null,
-          replies: [],
-        },
-      ],
-    },
-    {
-      id: 'seed-2',
-      title: 'Just completed my first Power BI dashboard for work!',
-      body: 'After 3 months of learning through DataTrack, I finally built my first production dashboard at work. It tracks our team\'s KPIs and has drill-down functionality.\n\nThe team loved it! My manager was really impressed. Feeling so accomplished right now. Data analytics journey has been totally worth it.\n\nTools used: Power BI Desktop, SQL Server, Excel for data prep.',
-      author: 'Priya Patel',
-      authorColor: '#ec4899',
-      category: 'showcase',
-      tags: ['power-bi', 'milestone', 'dashboard'],
-      timestamp: now - 5 * 3600 * 1000,
-      upvotes: 42,
-      downvotes: 0,
-      userVote: null,
-      comments: [
-        {
-          id: 'seed-c3',
-          postId: 'seed-2',
-          parentId: null,
-          author: 'Mike Johnson',
-          authorColor: '#ef4444',
-          body: 'That\'s amazing Priya! Congrats! Would you mind sharing some screenshots of your dashboard? I\'m still learning Power BI and would love to see real-world examples.',
-          timestamp: now - 4 * 3600 * 1000,
-          upvotes: 7,
-          downvotes: 0,
-          userVote: null,
-          replies: [],
-        },
-        {
-          id: 'seed-c4',
-          postId: 'seed-2',
-          parentId: null,
-          author: 'Alex Chen',
-          authorColor: '#3b82f6',
-          body: 'This is so inspiring! I\'m on week 2 of my data analytics journey. Stories like this keep me motivated. How long did it take you to feel comfortable with DAX?',
-          timestamp: now - 3.5 * 3600 * 1000,
-          upvotes: 5,
-          downvotes: 0,
-          userVote: null,
-          replies: [
-            {
-              id: 'seed-c4r1',
-              postId: 'seed-2',
-              parentId: 'seed-c4',
-              author: 'Priya Patel',
-              authorColor: '#ec4899',
-              body: 'DAX took me about 3 weeks to get comfortable with. Start with CALCULATE and FILTER — those two cover 80% of what you\'ll need!',
-              timestamp: now - 3 * 3600 * 1000,
-              upvotes: 11,
-              downvotes: 0,
-              userVote: null,
-              replies: [],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'seed-3',
-      title: 'Data analyst vs data scientist: which career path to choose?',
-      body: 'I\'m halfway through the DataTrack curriculum and starting to think about career options. I have a background in business and marketing.\n\nFor someone who enjoys finding insights from data but isn\'t super strong in advanced math/statistics, would data analytics or data science be a better fit?\n\nWould love to hear from people who\'ve made this choice!',
-      author: 'Mike Johnson',
-      authorColor: '#ef4444',
-      category: 'career',
-      tags: ['career-advice', 'data-analyst', 'data-scientist'],
-      timestamp: now - 8 * 3600 * 1000,
-      upvotes: 31,
-      downvotes: 2,
-      userVote: null,
-      comments: [
-        {
-          id: 'seed-c5',
-          postId: 'seed-3',
-          parentId: null,
-          author: 'Sarah Kim',
-          authorColor: '#8b5cf6',
-          body: 'With your business background, data analytics is a natural fit! You\'ll be able to translate business questions into data insights, which is exactly what companies need. Data science is more research/math-heavy.',
-          timestamp: now - 7 * 3600 * 1000,
-          upvotes: 15,
-          downvotes: 0,
-          userVote: null,
-          replies: [],
-        },
-      ],
-    },
-    {
-      id: 'seed-4',
-      title: 'Pro tip: Use CTEs instead of subqueries for better readability',
-      body: 'Just wanted to share a tip that really improved my SQL code quality. Instead of nesting subqueries, use Common Table Expressions (WITH clause).\n\nNot only is the code more readable, but it\'s also easier to debug since you can test each CTE independently.\n\nBefore:\nSELECT * FROM (SELECT ... FROM (SELECT ...))\n\nAfter:\nWITH step1 AS (...), step2 AS (...) SELECT * FROM step2\n\nYour future self will thank you!',
-      author: 'David Lee',
-      authorColor: '#f59e0b',
-      category: 'tips',
-      tags: ['sql', 'cte', 'best-practices'],
-      timestamp: now - 12 * 3600 * 1000,
-      upvotes: 56,
-      downvotes: 0,
-      userVote: null,
-      comments: [
-        {
-          id: 'seed-c6',
-          postId: 'seed-4',
-          parentId: null,
-          author: 'Priya Patel',
-          authorColor: '#ec4899',
-          body: 'Absolutely agree! CTEs are a lifesaver for complex queries. I also recommend giving them descriptive names — it makes the final SELECT read almost like English.',
-          timestamp: now - 11 * 3600 * 1000,
-          upvotes: 9,
-          downvotes: 0,
-          userVote: null,
-          replies: [],
-        },
-      ],
-    },
-    {
-      id: 'seed-5',
-      title: 'How do you stay motivated during long study sessions?',
-      body: 'I\'ve been studying for about 2 hours a day but sometimes I lose focus, especially with complex topics like data warehousing concepts.\n\nWhat techniques do you use to stay focused and motivated? Do you prefer the Pomodoro technique, or do you have other methods?\n\nAlso, how do you balance studying with a full-time job?',
-      author: 'Sarah Kim',
-      authorColor: '#8b5cf6',
-      category: 'discussion',
-      tags: ['motivation', 'study-tips', 'productivity'],
-      timestamp: now - 24 * 3600 * 1000,
-      upvotes: 38,
-      downvotes: 1,
-      userVote: null,
-      comments: [
-        {
-          id: 'seed-c7',
-          postId: 'seed-5',
-          parentId: null,
-          author: 'David Lee',
-          authorColor: '#f59e0b',
-          body: 'Pomodoro (25 min study, 5 min break) works great for me. I also set a daily goal of just "open the app" — once I start, the momentum carries me through.',
-          timestamp: now - 22 * 3600 * 1000,
-          upvotes: 14,
-          downvotes: 0,
-          userVote: null,
-          replies: [],
-        },
-      ],
-    },
-  ];
+  return [];
 }
 
-const TOP_CONTRIBUTORS = [
-  { name: 'Alex Chen', posts: 34, color: '#3b82f6' },
-  { name: 'Sarah Kim', posts: 28, color: '#8b5cf6' },
-  { name: 'David Lee', posts: 25, color: '#f59e0b' },
-  { name: 'Priya Patel', posts: 22, color: '#ec4899' },
-  { name: 'Mike Johnson', posts: 18, color: '#ef4444' },
-];
+const TOP_CONTRIBUTORS: { name: string; posts: number; color: string }[] = [];
 
 /* ─── Avatar component ─── */
 function Avatar({ name, color, size = 'sm' }: { name: string; color: string; size?: 'sm' | 'md' | 'lg' }) {
@@ -870,12 +668,14 @@ function TopContributorsSidebar() {
   );
 }
 
-/* ─── Community stats (compact) ─── */
+/* ─── Community stats (loaded from API) ─── */
 function CommunityStatsCompact() {
+  const store = useProgressStore();
+  // These will be populated from API when database is connected
   const stats = [
-    { label: 'Members', value: '1,247+', icon: Users, color: 'from-emerald-500 to-teal-500' },
-    { label: 'Discussions', value: '342', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
-    { label: 'Answers', value: '1,890', icon: TrendingUp, color: 'from-amber-500 to-orange-500' },
+    { label: 'Members', value: '—', icon: Users, color: 'from-emerald-500 to-teal-500' },
+    { label: 'Discussions', value: '—', icon: MessageSquare, color: 'from-blue-500 to-cyan-500' },
+    { label: 'Online', value: '—', icon: TrendingUp, color: 'from-amber-500 to-orange-500' },
   ];
 
   return (
@@ -1024,7 +824,7 @@ export default function CommunityView() {
                   ))}
                 </div>
                 <div className="text-white text-sm">
-                  <span className="font-semibold">1,247+</span>
+                  <span className="font-semibold">0</span>
                   <span className="text-emerald-200/60 ml-1">members</span>
                 </div>
               </div>
@@ -1191,7 +991,7 @@ export default function CommunityView() {
                   <>
                     <p className="text-xs text-muted-foreground">
                       Showing {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'}
-                      {communityPosts.length === 0 && ' (sample data — create your own!)'}
+                      {communityPosts.length === 0 && ' — be the first to post!'}
                     </p>
                     {filteredPosts.map((post) => (
                       <PostCard

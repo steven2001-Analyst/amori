@@ -917,7 +917,7 @@ import pandas as pd
 
 # Dirty text data
 raw_data = [
-    'Name: John Doe  |  Age: 32  |  Email: john@email.com',
+    'Name: Student A  |  Age: 28  |  Email: student@datatrack.com',
     'Name: Jane Smith|Age:28|Email:jane@email.com',
     'Name: Bob Johnson | Age: 45 | Phone: 555-1234',
     'Name: Alice | Age: 29 | Email: alice@test.org | Phone: 555-5678',
@@ -1305,7 +1305,7 @@ async function fetchDashboardData() {
 
   // Simulated responses
   const mockData = {
-    users: { total: 1247, active: 892, newToday: 23 },
+    users: { total: 0, active: 0, newToday: 0 },
     orders: { total: 5634, pending: 45, revenue: 284500 },
     products: { total: 328, inStock: 291, outOfStock: 37 },
   };
@@ -1876,7 +1876,7 @@ function simulatePython(code: string): string[] {
       lines.push('  ✓ Chart rendered: figure with 2 subplots (12x5)');
     } else if (trimmed.includes('re.search') || trimmed.includes('re.find')) {
       lines.push('     index        name  age');
-      lines.push('  0      0  John Doe    32');
+      lines.push('  0      0  Student A    28');
       lines.push('  1      1  Jane Smith  28');
       lines.push('  2      3  Alice       29');
     } else if (trimmed.includes('.fillna') || trimmed.includes('.replace') || trimmed.includes('.clip') || trimmed.includes('.str.')) {

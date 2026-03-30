@@ -124,29 +124,9 @@ function getDateGroup(timestamp: number): string {
   return 'Previous';
 }
 
-// ─── Pre-seeded notifications ───
+// ─── No pre-seeded notifications — all notifications are real user-generated ───
 function generateSeedNotifications(): NotificationItem[] {
-  const now = Date.now();
-  return [
-    {
-      id: 'n1', type: 'system', title: 'Welcome to DataTrack Pro! 🎉',
-      message: "Your learning journey starts now. Explore the Study Path to begin!",
-      detail: "Welcome to DataTrack Pro! Start by exploring the Study Path to plan your learning journey. You can track your progress, earn certificates, and connect with other learners in the community chat.",
-      timestamp: now - 2 * 60000, read: false, icon: 'star', actionUrl: 'study', actionLabel: 'Start Learning',
-    },
-    {
-      id: 'n2', type: 'reminder', title: 'Start your first lesson',
-      message: 'Head to the Study Path and complete your first topic to get started.',
-      detail: "Visit the Study Path section and pick any subject to begin. Each topic you complete earns you progress toward certificates. Start with a subject that interests you most!",
-      timestamp: now - 15 * 60000, read: false, icon: 'book', actionUrl: 'study', actionLabel: 'Start Learning',
-    },
-    {
-      id: 'n3', type: 'system', title: 'Explore all features',
-      message: 'Check out AI Assistant, Flashcards, Daily Challenges, and more from the sidebar.',
-      detail: "DataTrack Pro has many features to help you learn: AI Study Assistant for questions, Flashcards for review, Daily Challenges to test yourself, Community Chat to connect with others, and much more.",
-      timestamp: now - 60 * 60000, read: false, icon: 'zap', actionUrl: null,
-    },
-  ];
+  return [];
 }
 
 // ─── Main Component ───

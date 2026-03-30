@@ -501,7 +501,7 @@ export default function AuthView() {
                         <Input
                           id="reg-name"
                           type="text"
-                          placeholder="John Doe"
+                          placeholder="Your full name"
                           value={regName}
                           onChange={(e) => setRegName(e.target.value)}
                           className="pl-10 h-12 text-base rounded-xl border-gray-200 dark:border-gray-800 focus:border-emerald-500 focus:ring-emerald-500/20"

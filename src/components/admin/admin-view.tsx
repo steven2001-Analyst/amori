@@ -48,38 +48,9 @@ interface MockUser {
   coursesCompleted: number;
 }
 
-const mockUsers: MockUser[] = [
-  { id: 'u1', name: 'Sarah Chen', email: 'sarah.chen@email.com', plan: 'pro', joinDate: '2025-10-15', status: 'active', booksRead: 12, coursesCompleted: 3 },
-  { id: 'u2', name: 'James Wilson', email: 'j.wilson@email.com', plan: 'team', joinDate: '2025-11-02', status: 'active', booksRead: 28, coursesCompleted: 7 },
-  { id: 'u3', name: 'Maria Rodriguez', email: 'maria.r@email.com', plan: 'free', joinDate: '2026-01-20', status: 'active', booksRead: 5, coursesCompleted: 1 },
-  { id: 'u4', name: 'Alex Kumar', email: 'alex.kumar@email.com', plan: 'pro', joinDate: '2025-09-10', status: 'banned', booksRead: 2, coursesCompleted: 0 },
-  { id: 'u5', name: 'Emily Park', email: 'e.park@email.com', plan: 'free', joinDate: '2026-02-05', status: 'inactive', booksRead: 0, coursesCompleted: 0 },
-  { id: 'u6', name: 'David Thompson', email: 'd.thompson@email.com', plan: 'pro', joinDate: '2025-12-01', status: 'active', booksRead: 18, coursesCompleted: 5 },
-  { id: 'u7', name: 'Lisa Wang', email: 'l.wang@email.com', plan: 'team', joinDate: '2026-01-08', status: 'active', booksRead: 34, coursesCompleted: 9 },
-  { id: 'u8', name: 'Robert Kim', email: 'r.kim@email.com', plan: 'free', joinDate: '2026-02-14', status: 'active', booksRead: 3, coursesCompleted: 0 },
-];
-
-const mockActivityLog = [
-  { id: 'a1', action: 'User login', user: 'Sarah Chen', time: '2 min ago', type: 'auth' },
-  { id: 'a2', action: 'Book purchased: Storytelling with Data', user: 'James Wilson', time: '5 min ago', type: 'purchase' },
-  { id: 'a3', action: 'Plan upgraded to Pro', user: 'Maria Rodriguez', time: '15 min ago', type: 'billing' },
-  { id: 'a4', action: 'Failed login attempt', user: 'Unknown IP', time: '22 min ago', type: 'security' },
-  { id: 'a5', action: 'Certificate earned: SQL Fundamentals', user: 'David Thompson', time: '1 hour ago', type: 'achievement' },
-  { id: 'a6', action: 'Subscription cancelled', user: 'Emily Park', time: '2 hours ago', type: 'billing' },
-  { id: 'a7', action: 'New user registered', user: 'Tom Baker', time: '3 hours ago', type: 'auth' },
-  { id: 'a8', action: 'Copy attempt detected on book', user: 'Alex Kumar', time: '4 hours ago', type: 'security' },
-  { id: 'a9', action: 'Screenshot attempt on book', user: 'Unknown', time: '5 hours ago', type: 'security' },
-  { id: 'a10', action: 'Print attempt blocked', user: 'IP 192.168.1.45', time: '6 hours ago', type: 'security' },
-];
-
-const mockBooks = [
-  { id: 'b1', title: 'Storytelling with Data', author: 'Cole Nussbaumer Knaflic', status: 'published', reads: 1243, subject: 'Data Analytics' },
-  { id: 'b2', title: 'Python for Data Analysis', author: 'Wes McKinney', status: 'published', reads: 987, subject: 'Python' },
-  { id: 'b3', title: 'Spark: The Definitive Guide', author: 'Bill Chambers', status: 'published', reads: 756, subject: 'Databricks' },
-  { id: 'b4', title: 'SQL in 10 Minutes', author: 'Ben Forta', status: 'draft', reads: 0, subject: 'SQL' },
-  { id: 'b5', title: 'Hands-On Machine Learning', author: 'Aurélien Géron', status: 'review', reads: 432, subject: 'Python' },
-  { id: 'b6', title: 'Excel 2023 Bible', author: 'Michael Alexander', status: 'published', reads: 2105, subject: 'Excel' },
-];
+const mockUsers: MockUser[] = [];
+const mockActivityLog: { id: string; action: string; user: string; time: string; type: string }[] = [];
+const mockBooks: { id: string; title: string; author: string; status: string; reads: number; subject: string }[] = [];
 
 /* ─── Announcement interface ─── */
 interface Announcement {

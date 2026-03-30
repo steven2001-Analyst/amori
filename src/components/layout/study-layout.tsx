@@ -399,7 +399,7 @@ function AuthModal({ open, onOpenChange, defaultTab }: { open: boolean; onOpenCh
               <Label htmlFor="signup-name">Full Name</Label>
               <Input
                 id="signup-name"
-                placeholder="John Doe"
+                placeholder="Your full name"
                 value={signupName}
                 onChange={(e) => setSignupName(e.target.value)}
                 className="h-11"
