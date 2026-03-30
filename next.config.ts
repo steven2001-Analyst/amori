@@ -2,7 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -10,7 +9,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: [
       'framer-motion',
-      'recharts',
       'lucide-react',
       'date-fns',
       '@radix-ui/react-dialog',

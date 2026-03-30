@@ -1,53 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { verifyToken } from '@/lib/auth';
+import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
+import { verifyToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header or query param (for SSR)
-    const authHeader = request.headers.get('authorization');
-    const queryToken = request.nextUrl.searchParams.get('token');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : queryToken;
-
+    const token = request.cookies.get('amori-token')?.value
     if (!token) {
-      return NextResponse.json({ success: false, error: 'No token provided' }, { status: 401 });
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const payload = await verifyToken(token);
+    const payload = await verifyToken(token)
     if (!payload) {
-      return NextResponse.json({ success: false, error: 'Invalid or expired token' }, { status: 401 });
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Fetch fresh user data
-    const { data: user, error: userError } = await supabase
-      .from('User')
-      .select('*, UserProgress(*)')
-      .eq('id', payload.userId)
-      .single();
-
-    if (userError || !user) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
-    }
-
-    const progress = (user.UserProgress as any)?.[0] || null;
-
-    return NextResponse.json({
-      success: true,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        avatarColor: user.avatarColor,
-        profilePicture: user.profilePicture,
-        joinedDate: user.joinedDate,
-        xp: progress?.xp || 0,
-        level: progress?.level || 1,
-        streak: progress?.streak || 0,
+    const user = await db.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        avatar: true,
+        age: true,
+        gender: true,
+        bio: true,
+        interests: true,
+        location: true,
+        occupation: true,
+        lookingFor: true,
+        maxDistance: true,
+        ageRangeMin: true,
+        ageRangeMax: true,
+        isOnline: true,
+        lastSeen: true,
+        isPremium: true,
+        premiumExpiry: true,
+        swipesToday: true,
+        swipesResetDate: true,
+        createdAt: true,
       },
-    });
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const onboarded = !!(user.age && user.gender && user.interests !== '[]')
+
+    return NextResponse.json({ ...user, onboarded })
   } catch (error) {
-    console.error('Session error:', error);
-    return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+    console.error('Session error:', error)
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
 }

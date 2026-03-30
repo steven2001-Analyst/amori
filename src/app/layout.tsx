@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,20 +15,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DataTrack Pro — Your Data Analytics Journey",
+  title: "Amori — Find Your Perfect Match",
   description:
-    "Track your data analytics study progress across Excel, SQL, Power BI, Python, and more. Stay motivated with gamified learning, achievements, and beautiful progress visualization.",
-  keywords: [
-    "Data Analytics",
-    "Study Tracker",
-    "Learning Progress",
-    "SQL",
-    "Excel",
-    "Power BI",
-    "Python",
-  ],
+    "Amori is a modern dating platform designed to help you find meaningful connections. Swipe, match, and start your love story today.",
+  keywords: ["Dating", "Match", "Love", "Relationships", "Amori"],
   icons: {
-    icon: "/logo.svg",
+    icon: "/logo.png",
   },
 };
 
@@ -49,7 +41,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
-          <Toaster />
+          <Toaster position="top-center" richColors />
         </ThemeProvider>
       </body>
     </html>

@@ -3,133 +3,117 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  passwordHash  String
-  role          String   @default("member")
-  avatarColor   String   @default("#10b981")
-  profilePicture String?
-  bio           String   @default("")
-  joinedDate    String
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String
+  passwordHash    String
+  avatar          String?
+  bio             String    @default("")
+  age             Int
+  gender          String    @default("")
+  location        String    @default("")
+  occupation      String    @default("")
+  interests       String    @default("[]")
+  lookingFor      String    @default("")
+  maxDistance      Int       @default(50)
+  ageRangeMin     Int       @default(18)
+  ageRangeMax     Int       @default(65)
+  isOnline        Boolean   @default(false)
+  lastSeen        DateTime  @default(now())
+  isPremium       Boolean   @default(false)
+  premiumExpiry   DateTime?
+  swipesToday     Int       @default(0)
+  swipesResetDate DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  progress       UserProgress?
-  studyDates     StudyDate[]
-  notes          UserNote[]
-  flashcards     UserFlashcard[]
-  payments       Payment[]
-  posts          CommunityPost[]
-  postVotes      PostVote[]
-  xpHistory      XpHistory[]
-  notifications  UserNotification[]
+  photos          Photo[]
+  matches1        Match[]   @relation("User1Matches")
+  matches2        Match[]   @relation("User2Matches")
+  sentMessages    Message[] @relation("SentMessages")
+  notifications   Notification[]
+  reports         Report[]  @relation("ReporterReports")
+  reportsReceived Report[]  @relation("ReportedReports")
 }
 
-model UserProgress {
-  id                String  @id @default(cuid())
-  userId            String  @unique
-  completedTopics  String  @default("[]")
-  streak            Int     @default(0)
-  lastStudyDate     String?
-  xp                Int     @default(0)
-  level             Int     @default(1)
-  quizHighScore     Int     @default(0)
-  totalStudyMinutes Int     @default(0)
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model StudyDate {
+model Photo {
   id        String   @id @default(cuid())
   userId    String
-  date      String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date])
-}
-
-model UserNote {
-  id      String @id @default(cuid())
-  userId  String
-  topicId String
-  content String  @default("")
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, topicId])
-}
-
-model UserFlashcard {
-  id      String @id @default(cuid())
-  userId  String
-  topicId String
-  front   String
-  back    String
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Payment {
-  id            String   @id @default(cuid())
-  userId        String
-  plan          String   @default("pro")
-  amount        Float
-  currency      String   @default("usd")
-  status        String   @default("verified")
-  method        String   @default("card")
-  last4         String   @default("")
-  transactionId String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model CommunityPost {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  body      String
-  category  String   @default("discussion")
-  tags      String   @default("[]")
-  upvotes   Int      @default(0)
-  downvotes Int      @default(0)
+  url       String
+  order     Int      @default(0)
+  isProfile Boolean  @default(false)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  votes     PostVote[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
-model PostVote {
-  id        String @id @default(cuid())
-  userId    String
-  postId    String
-  voteType  String @default("up")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId])
-}
-
-model XpHistory {
-  id      String @id @default(cuid())
-  userId  String
-  date    String
-  xp      Int     @default(0)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, date])
-}
-
-model UserNotification {
+model Match {
   id        String   @id @default(cuid())
-  userId    String
-  type      String   @default("system")
-  title     String
-  message   String
-  icon      String   @default("info")
-  isRead    Boolean  @default(false)
+  user1Id   String
+  user2Id   String
+  type      String   @default("liked")
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user1    User      @relation("User1Matches", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User      @relation("User2Matches", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([type])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matchId   String
+  senderId  String
+  content   String
+  type      String   @default("text")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([senderId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   @default("system")
+  title      String
+  body       String?
+  fromUserId String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String
+  reportedId  String
+  reason      String
+  description String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  reporter User @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("ReportedReports", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedId])
 }
