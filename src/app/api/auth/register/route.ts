@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const normalizedName = name.trim();
 
     // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+    const existingUser = await db.user.findUnique({ where: { email: normalizedEmail } });
     if (existingUser) {
       return NextResponse.json({ success: false, error: 'An account with this email already exists.' }, { status: 409 });
     }
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const avatarColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
     const avatarColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
 
-    const user = await prisma.user.create({
+    const user = await db.user.create({
       data: {
         name: normalizedName,
         email: normalizedEmail,
@@ -69,6 +69,5 @@ export async function POST(request: NextRequest) {
     console.error('Registration error:', error);
     return NextResponse.json({ success: false, error: 'Server error. Please try again.' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

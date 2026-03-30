@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 // GET /api/leaderboard - real leaderboard from database
 export async function GET(request: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get top users by XP from progress
-    const topUsers = await prisma.userProgress.findMany({
+    const topUsers = await db.userProgress.findMany({
       include: {
         user: { select: { id: true, name: true, email: true, avatarColor: true, joinedDate: true } },
       },
@@ -43,6 +43,5 @@ export async function GET(request: NextRequest) {
     console.error('Leaderboard GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

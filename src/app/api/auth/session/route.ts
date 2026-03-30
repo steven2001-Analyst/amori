@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch fresh user data
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { id: payload.userId },
       include: { progress: true },
     });
@@ -49,6 +49,5 @@ export async function GET(request: NextRequest) {
     console.error('Session error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

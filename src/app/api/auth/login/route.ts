@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyPassword, createToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await prisma.user.findUnique({
+    const user = await db.user.findUnique({
       where: { email: normalizedEmail },
       include: { progress: true },
     });
@@ -60,6 +60,5 @@ export async function POST(request: NextRequest) {
     console.error('Login error:', error);
     return NextResponse.json({ success: false, error: 'Server error. Please try again.' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

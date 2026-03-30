@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 // GET /api/community/posts - fetch all posts with user info
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const posts = await prisma.communityPost.findMany({
+    const posts = await db.communityPost.findMany({
       include: {
         user: { select: { id: true, name: true, email: true, avatarColor: true } },
         votes: { where: { userId: payload.userId } },
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
       currentUserVote: post.votes.length > 0 ? post.votes[0].voteType : null,
     }));
 
-    const totalUsers = await prisma.user.count();
-    const totalPosts = await prisma.communityPost.count();
+    const totalUsers = await db.user.count();
+    const totalPosts = await db.communityPost.count();
 
     return NextResponse.json({
       success: true,
@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
     console.error('Community posts GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Body is required' }, { status: 400 });
     }
 
-    const post = await prisma.communityPost.create({
+    const post = await db.communityPost.create({
       data: {
         userId: payload.userId,
         title: title.trim(),
@@ -115,6 +114,5 @@ export async function POST(request: NextRequest) {
     console.error('Community posts POST error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 // GET /api/admin/users - real user list for admin panel
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
 
-    const users = await prisma.user.findMany({
+    const users = await db.user.findMany({
       include: {
         progress: { select: { xp: true, level: true, streak: true, quizHighScore: true } },
         payments: { select: { plan: true, amount: true, status: true, createdAt: true } },
@@ -43,10 +43,10 @@ export async function GET(request: NextRequest) {
     }));
 
     const stats = {
-      totalUsers: await prisma.user.count(),
-      totalPosts: await prisma.communityPost.count(),
-      totalPayments: await prisma.payment.count(),
-      activeToday: await prisma.user.count({
+      totalUsers: await db.user.count(),
+      totalPosts: await db.communityPost.count(),
+      totalPayments: await db.payment.count(),
+      activeToday: await db.user.count({
         where: {
           progress: { lastStudyDate: new Date().toISOString().split('T')[0] },
         },
@@ -58,6 +58,5 @@ export async function GET(request: NextRequest) {
     console.error('Admin users GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

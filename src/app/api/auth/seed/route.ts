@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 // Seed the admin user into the database.
 // This runs once to create the initial admin account.
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if admin already exists
-    const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
+    const existing = await db.user.findUnique({ where: { email: adminEmail } });
     if (existing) {
       return NextResponse.json({ success: true, message: 'Admin user already exists' });
     }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // Create admin user with properly hashed password
     const passwordHash = await hashPassword(adminPassword);
 
-    await prisma.user.create({
+    await db.user.create({
       data: {
         name: 'Admin',
         email: adminEmail,
@@ -62,6 +62,5 @@ export async function POST(request: NextRequest) {
     console.error('Seed error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }

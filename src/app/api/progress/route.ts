@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+// Uses shared db instance from @/lib/db
 
 // GET - fetch user progress from database
 export async function GET(request: NextRequest) {
@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const progress = await prisma.userProgress.findUnique({
+    const progress = await db.userProgress.findUnique({
       where: { userId: payload.userId },
     });
 
-    const studyDates = await prisma.studyDate.findMany({
+    const studyDates = await db.studyDate.findMany({
       where: { userId: payload.userId },
       orderBy: { date: 'asc' },
     });
@@ -59,7 +59,6 @@ export async function GET(request: NextRequest) {
     console.error('Progress GET error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -80,7 +79,7 @@ export async function PUT(request: NextRequest) {
     const { completedTopics, streak, lastStudyDate, xp, level, quizHighScore, totalStudyMinutes, studyDates } = body;
 
     // Upsert progress
-    await prisma.userProgress.upsert({
+    await db.userProgress.upsert({
       where: { userId: payload.userId },
       update: {
         completedTopics: JSON.stringify(completedTopics || []),
@@ -105,8 +104,8 @@ export async function PUT(request: NextRequest) {
 
     // Sync study dates (delete old, insert new)
     if (Array.isArray(studyDates) && studyDates.length > 0) {
-      await prisma.studyDate.deleteMany({ where: { userId: payload.userId } });
-      await prisma.studyDate.createMany({
+      await db.studyDate.deleteMany({ where: { userId: payload.userId } });
+      await db.studyDate.createMany({
         data: studyDates.map((date: string) => ({ userId: payload.userId, date })),
       });
     }
@@ -116,6 +115,5 @@ export async function PUT(request: NextRequest) {
     console.error('Progress PUT error:', error);
     return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
   } finally {
-    await prisma.$disconnect();
   }
 }
