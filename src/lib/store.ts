@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { subjects, getAllTopics } from "./study-data";
 
+// Debounce timer for database sync
+let syncTimer: ReturnType<typeof setTimeout> | null = null;
+
 const simpleHash = (str: string): string => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -421,6 +424,10 @@ interface ProgressState {
   setSiteBranding: (branding: Partial<{ name: string; tagline: string; primaryColor: string }>) => void;
   setRegistrationSettings: (settings: Partial<{ open: boolean; emailVerification: boolean; autoApprove: boolean }>) => void;
   resetAllUserProgress: () => void;
+
+  // Database sync methods
+  syncProgressToDb: () => void;
+  loadProgressFromDb: () => Promise<void>;
 }
 
 export const useProgressStore = create<ProgressState>()(
@@ -708,6 +715,7 @@ export const useProgressStore = create<ProgressState>()(
 
           return { completedTopics: newCompleted };
         });
+        get().syncProgressToDb();
       },
 
       isTopicCompleted: (topicId: string) => {
@@ -750,12 +758,14 @@ export const useProgressStore = create<ProgressState>()(
           streak: newStreak,
           lastStudyDate: today,
         });
+        get().syncProgressToDb();
       },
 
       setQuizHighScore: (score: number) => {
         set((state) => ({
           quizHighScore: Math.max(state.quizHighScore, score),
         }));
+        get().syncProgressToDb();
       },
 
       setMemoryGameCompleted: (completed: boolean) => {
@@ -974,6 +984,8 @@ export const useProgressStore = create<ProgressState>()(
                 ...(state.loginHistory || []).slice(0, 49),
               ],
             });
+            // Load progress from database after login
+            get().loadProgressFromDb();
             return { success: true };
           } else {
             // Handle server error with client-side rate limiting
@@ -1415,6 +1427,7 @@ export const useProgressStore = create<ProgressState>()(
           ).sort((a, b) => b.xp - a.xp).map((e, i) => ({ ...e, rank: i + 1 }));
           return { xp: newTotal, level: newLevel, xpHistory: newHistory.slice(-90), leaderboardEntries: newLeaderboard };
         });
+        get().syncProgressToDb();
       },
       completeDailyQuest: (id) => {
         set((state) => {
@@ -1572,15 +1585,7 @@ export const useProgressStore = create<ProgressState>()(
           loginPassword: '',
           twoFactorEnabled: false,
           loginHistory: [],
-          registeredUsers: [{
-            id: 'admin-seed-001',
-            name: 'Steven',
-            email: 'stevensaleh100@outlook.com',
-            passwordHash: simpleHash('datatrack2026'),
-            role: 'admin' as const,
-            joinedDate: '2025-01-01',
-            avatarColor: '#10b981',
-          }],
+          registeredUsers: [],
           requirePasswordForBooks: false,
           communityPosts: [],
           maintenanceMode: false,
@@ -1594,6 +1599,62 @@ export const useProgressStore = create<ProgressState>()(
           referralStats: { clicks: 0, signups: 0, conversions: 0, earnings: 0 },
           referralHistory: [],
         });
+      },
+
+      // ─── Database Sync Methods ───
+      syncProgressToDb: () => {
+        const state = get();
+        if (!state.authToken) return;
+        if (syncTimer) clearTimeout(syncTimer);
+        syncTimer = setTimeout(async () => {
+          try {
+            const s = get();
+            await fetch('/api/progress', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${s.authToken}`,
+              },
+              body: JSON.stringify({
+                completedTopics: s.completedTopics,
+                streak: s.streak,
+                lastStudyDate: s.lastStudyDate,
+                xp: s.xp,
+                level: s.level,
+                quizHighScore: s.quizHighScore,
+                totalStudyMinutes: 0,
+                studyDates: s.studyDates,
+              }),
+            });
+          } catch (e) {
+            console.error('Failed to sync progress to database:', e);
+          }
+        }, 10000);
+      },
+
+      loadProgressFromDb: async () => {
+        const state = get();
+        if (!state.authToken) return;
+        try {
+          const res = await fetch('/api/progress', {
+            headers: { 'Authorization': `Bearer ${state.authToken}` },
+          });
+          const data = await res.json();
+          if (data.success && data.data) {
+            const d = data.data;
+            set({
+              completedTopics: d.completedTopics || [],
+              streak: d.streak || 0,
+              lastStudyDate: d.lastStudyDate || null,
+              studyDates: d.studyDates || [],
+              xp: d.xp || 0,
+              level: d.level || 1,
+              quizHighScore: d.quizHighScore || 0,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to load progress from database:', e);
+        }
       },
     }),
     {
@@ -1658,21 +1719,6 @@ export const useProgressStore = create<ProgressState>()(
           completedCertExams: [],
         };
         const merged = { ...current, ...defaults, ...(persisted as object) };
-        // Ensure admin seed user always exists
-        if (!Array.isArray(merged.registeredUsers) || !merged.registeredUsers.some((u: RegisteredUser) => u.email === 'stevensaleh100@outlook.com')) {
-          merged.registeredUsers = [
-            {
-              id: 'admin-seed-001',
-              name: 'Steven',
-              email: 'stevensaleh100@outlook.com',
-              passwordHash: simpleHash('datatrack2026'),
-              role: 'admin' as const,
-              joinedDate: '2025-01-01',
-              avatarColor: '#10b981',
-            },
-            ...(Array.isArray(merged.registeredUsers) ? merged.registeredUsers : []),
-          ];
-        }
         return merged;
       },
     }
