@@ -88,9 +88,7 @@ export default function AuthView() {
     setIsLoading(true);
 
     try {
-      await new Promise((r) => setTimeout(r, 250));
-
-      const result = loginUser(loginEmail, loginPassword);
+      const result = await loginUser(loginEmail, loginPassword);
 
       if (result.success) {
         toast.success('Welcome back!', { description: 'You have been logged in successfully.' });
@@ -129,9 +127,7 @@ export default function AuthView() {
     setIsLoading(true);
 
     try {
-      await new Promise((r) => setTimeout(r, 250));
-
-      const result = registerUser(regName, regEmail, regPassword);
+      const result = await registerUser(regName, regEmail, regPassword);
 
       if (result.success) {
         toast.success('Account created!', { description: 'You can now log in with your credentials.' });

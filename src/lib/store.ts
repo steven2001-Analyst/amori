@@ -203,6 +203,8 @@ interface ProgressState {
 
   // Auth
   currentUser: string | null;
+  currentUserId: string | null;
+  authToken: string | null;
   registeredUsers: RegisteredUser[];
   loginHistory: LoginHistoryEntry[];
   loginEmail: string;
@@ -215,13 +217,14 @@ interface ProgressState {
   lockExpiry: number | null;
   twoFactorEnabled: boolean;
   requirePasswordForBooks: boolean;
+  authLoading: boolean;
 
-  // Auth methods
-  loginUser: (email: string, password: string) => { success: boolean; error?: string };
-  registerUser: (name: string, email: string, password: string) => { success: boolean; error?: string };
+  // Auth methods (async - call server API)
+  loginUser: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  registerUser: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logoutUser: () => void;
   getCurrentUserData: () => RegisteredUser | null;
-  authenticateUser: (email: string, password: string) => boolean;
+  authenticateUser: (email: string, password: string) => Promise<boolean>;
   resetFailedAttempts: () => void;
   checkLockStatus: () => boolean;
   setTwoFactorEnabled: (enabled: boolean) => void;
@@ -459,17 +462,10 @@ export const useProgressStore = create<ProgressState>()(
 
       // Auth initial state
       currentUser: null,
-      registeredUsers: [
-        {
-          id: 'admin-seed-001',
-          name: 'Steven',
-          email: 'stevensaleh100@outlook.com',
-          passwordHash: simpleHash('datatrack2026'),
-          role: 'admin',
-          joinedDate: '2025-01-01',
-          avatarColor: '#10b981',
-        },
-      ],
+      currentUserId: null,
+      authToken: null,
+      registeredUsers: [],
+      authLoading: false,
       loginHistory: [],
       loginEmail: '',
       loginPassword: '',
@@ -920,8 +916,8 @@ export const useProgressStore = create<ProgressState>()(
         }));
       },
 
-      // Auth methods
-      loginUser: (email: string, password: string) => {
+      // Auth methods - now call server API routes
+      loginUser: async (email: string, password: string) => {
         const state = get();
 
         // Check lock status first
@@ -939,67 +935,69 @@ export const useProgressStore = create<ProgressState>()(
           return { success: false, error: 'Please enter your password.' };
         }
 
-        const hash = simpleHash(password);
-        const user = state.registeredUsers.find(
-          (u) => u.email.toLowerCase() === email.toLowerCase() && u.passwordHash === hash
-        );
+        set({ authLoading: true });
 
-        if (user) {
-          const loginTime = Date.now();
-          set({
-            currentUser: user.email,
-            isAuthenticated: true,
-            isAdmin: user.role === 'admin',
-            isLoggedIn: true,
-            userRole: user.role,
-            subscriptionStatus: user.role === 'admin' ? 'active' : state.subscriptionStatus,
-            subscriptionPlan: user.role === 'admin' ? 'pro' : state.subscriptionPlan,
-            failedLoginAttempts: 0,
-            lastLoginTime: loginTime,
-            sessionDuration: 0,
-            loginEmail: user.email,
-            profile: { ...state.profile, name: user.name, email: user.email, joinedDate: user.joinedDate },
-            loginHistory: [
-              { email: user.email, timestamp: loginTime, action: 'login' },
-              ...(state.loginHistory || []).slice(0, 49),
-            ],
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
           });
-          return { success: true };
-        } else {
-          const newFailedAttempts = state.failedLoginAttempts + 1;
-          const newHistory: LoginHistoryEntry[] = [
-            { email, timestamp: Date.now(), action: 'login' },
-            ...(state.loginHistory || []).slice(0, 49),
-          ];
+          const data = await res.json();
 
-          if (newFailedAttempts >= 5) {
-            const lockExpiry = Date.now() + 5 * 60 * 1000;
+          if (data.success) {
+            const loginTime = Date.now();
+            const role = data.user.role as 'member' | 'admin';
             set({
-              failedLoginAttempts: newFailedAttempts,
-              isLocked: true,
-              lockExpiry,
-              loginHistory: newHistory,
+              currentUser: data.user.email,
+              currentUserId: data.user.id,
+              authToken: data.token,
+              isAuthenticated: true,
+              isAdmin: role === 'admin',
+              isLoggedIn: true,
+              userRole: role,
+              subscriptionStatus: role === 'admin' ? 'active' : state.subscriptionStatus,
+              subscriptionPlan: role === 'admin' ? 'pro' : state.subscriptionPlan,
+              failedLoginAttempts: 0,
+              lastLoginTime: loginTime,
+              sessionDuration: 0,
+              loginEmail: data.user.email,
+              authLoading: false,
+              profile: {
+                ...state.profile,
+                name: data.user.name,
+                email: data.user.email,
+                joinedDate: data.user.joinedDate,
+              },
+              loginHistory: [
+                { email: data.user.email, timestamp: loginTime, action: 'login' },
+                ...(state.loginHistory || []).slice(0, 49),
+              ],
             });
-            return { success: false, error: 'Too many failed attempts. Account locked for 5 minutes.' };
+            return { success: true };
+          } else {
+            // Handle server error with client-side rate limiting
+            const newFailedAttempts = state.failedLoginAttempts + 1;
+            if (newFailedAttempts >= 5) {
+              const lockExpiry = Date.now() + 5 * 60 * 1000;
+              set({ failedLoginAttempts: newFailedAttempts, isLocked: true, lockExpiry, authLoading: false });
+              return { success: false, error: 'Too many failed attempts. Account locked for 5 minutes.' };
+            }
+            set({ failedLoginAttempts: newFailedAttempts, authLoading: false });
+            return { success: false, error: data.error || 'Invalid email or password.' };
           }
-
-          set({
-            failedLoginAttempts: newFailedAttempts,
-            loginHistory: newHistory,
-          });
-
-          return { success: false, error: 'Invalid email or password.' };
+        } catch (error) {
+          set({ authLoading: false });
+          return { success: false, error: 'Network error. Please check your connection and try again.' };
         }
       },
 
-      authenticateUser: (email: string, password: string) => {
-        const result = get().loginUser(email, password);
+      authenticateUser: async (email: string, password: string) => {
+        const result = await get().loginUser(email, password);
         return result.success;
       },
 
-      registerUser: (name: string, email: string, password: string) => {
-        const state = get();
-
+      registerUser: async (name: string, email: string, password: string) => {
         if (!name.trim()) {
           return { success: false, error: 'Please enter your full name.' };
         }
@@ -1013,34 +1011,27 @@ export const useProgressStore = create<ProgressState>()(
           return { success: false, error: 'Password must be at least 8 characters.' };
         }
 
-        if (
-          state.registeredUsers.some(
-            (u) => u.email.toLowerCase() === email.toLowerCase()
-          )
-        ) {
-          return { success: false, error: 'An account with this email already exists.' };
+        set({ authLoading: true });
+
+        try {
+          const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password }),
+          });
+          const data = await res.json();
+
+          set({ authLoading: false });
+
+          if (data.success) {
+            return { success: true };
+          } else {
+            return { success: false, error: data.error || 'Registration failed.' };
+          }
+        } catch (error) {
+          set({ authLoading: false });
+          return { success: false, error: 'Network error. Please check your connection and try again.' };
         }
-
-        const avatarColors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16'];
-        const newUser: RegisteredUser = {
-          id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          passwordHash: simpleHash(password),
-          role: 'member',
-          joinedDate: new Date().toISOString().split('T')[0],
-          avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
-        };
-
-        set({
-          registeredUsers: [...state.registeredUsers, newUser],
-          loginHistory: [
-            { email: newUser.email, timestamp: Date.now(), action: 'register' },
-            ...(state.loginHistory || []).slice(0, 49),
-          ],
-        });
-
-        return { success: true };
       },
 
       getCurrentUserData: () => {
@@ -1056,6 +1047,8 @@ export const useProgressStore = create<ProgressState>()(
           : state.loginHistory || [];
         set({
           currentUser: null,
+          currentUserId: null,
+          authToken: null,
           isAuthenticated: false,
           isAdmin: false,
           isLoggedIn: false,
@@ -1067,6 +1060,7 @@ export const useProgressStore = create<ProgressState>()(
           loginEmail: '',
           loginPassword: '',
           loginHistory: newHistory,
+          authLoading: false,
         });
       },
 

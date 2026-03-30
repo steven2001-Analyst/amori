@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,12 +9,103 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
+  name      String
   email     String   @unique
-  name      String?
+  passwordHash String
+  role      String   @default("member") // "member" | "admin"
+  avatarColor String @default("#10b981")
+  profilePicture String?
+  joinedDate String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  progress   UserProgress?
+  studyDates StudyDate[]
+  notes      UserNote[]
+  flashcards UserFlashcard[]
+  payments   Payment[]
+  posts      CommunityPost[]
+  xpHistory  XpHistory[]
 }
 
+model UserProgress {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  completedTopics  String  // JSON array of topic IDs
+  streak           Int     @default(0)
+  lastStudyDate    String?
+  xp               Int     @default(0)
+  level            Int     @default(1)
+  quizHighScore    Int     @default(0)
+  totalStudyMinutes Int    @default(0)
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StudyDate {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model UserNote {
+  id      String @id @default(cuid())
+  userId  String
+  topicId String
+  content String  @default("")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+}
+
+model UserFlashcard {
+  id      String @id @default(cuid())
+  userId  String
+  topicId String
+  front   String
+  back    String
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id           String @id @default(cuid())
+  userId       String
+  plan         String @default("pro")
+  amount       Float
+  currency     String @default("usd")
+  status       String @default("verified")
+  method       String @default("card")
+  last4        String @default("")
+  transactionId String @unique
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CommunityPost {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  category  String   @default("discussion")
+  tags      String   @default("[]")
+  upvotes   Int      @default(0)
+  downvotes Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model XpHistory {
+  id      String @id @default(cuid())
+  userId  String
+  date    String
+  xp      Int     @default(0)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+// Keep Post model for backward compatibility
 model Post {
   id        String   @id @default(cuid())
   title     String

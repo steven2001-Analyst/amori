@@ -224,10 +224,7 @@ function AuthModal({ open, onOpenChange, defaultTab }: { open: boolean; onOpenCh
 
     setLoginLoading(true);
 
-    // Simulate network delay
-    await new Promise((r) => setTimeout(r, 800));
-
-    const result = store.loginUser(loginEmail.trim(), loginPassword);
+    const result = await store.loginUser(loginEmail.trim(), loginPassword);
     if (result.success) {
       store.checkLockStatus();
       toast.success('Welcome back! You are now signed in.');
@@ -248,14 +245,12 @@ function AuthModal({ open, onOpenChange, defaultTab }: { open: boolean; onOpenCh
     if (!signupEmail.trim()) { setSignupError('Please enter your email.'); return; }
     if (!signupEmail.includes('@')) { setSignupError('Please enter a valid email address.'); return; }
     if (!signupPassword) { setSignupError('Please enter a password.'); return; }
-    if (signupPassword.length < 6) { setSignupError('Password must be at least 6 characters.'); return; }
+    if (signupPassword.length < 8) { setSignupError('Password must be at least 8 characters.'); return; }
     if (signupPassword !== signupConfirmPassword) { setSignupError('Passwords do not match.'); return; }
     if (!signupTerms) { setSignupError('Please agree to the Terms of Service.'); return; }
 
     setSignupLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-
-    const result = store.registerUser(signupName.trim(), signupEmail.trim(), signupPassword);
+    const result = await store.registerUser(signupName.trim(), signupEmail.trim(), signupPassword);
     if (result.success) {
       toast.success('Account created! You can now sign in.');
       setSignupName('');
