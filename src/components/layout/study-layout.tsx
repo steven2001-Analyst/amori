@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   BookOpen,
@@ -88,8 +89,6 @@ import { useProgressStore } from '@/lib/store';
 export type Section = 'dashboard' | 'study' | 'ai-assistant' | 'ai-tutor' | 'notes' | 'flashcards' | 'challenge' | 'live-practice' | 'practice' | 'certificate' | 'books' | 'games' | 'tools' | 'sql-playground' | 'community' | 'chat' | 'payment' | 'achievements' | 'streaks' | 'portfolio' | 'resources' | 'resume' | 'resume-analyzer' | 'playground' | 'assessment' | 'visualization' | 'notifications' | 'peer-review' | 'whiteboard' | 'leaderboard' | 'profile' | 'settings' | 'admin' | 'advanced-tools' | 'path-recommender' | 'marketplace' | 'premium-membership' | 'referral-system' | 'ai-sql-assistant' | 'challenges' | 'career-advisor' | 'course-store' | 'pro-certifications' | 'mentorship';
 
 interface StudyLayoutProps {
-  activeSection: Section;
-  onSectionChange: (section: Section) => void;
   children: React.ReactNode;
 }
 
@@ -622,7 +621,10 @@ function formatLastLogin(timestamp: number | null): string {
 }
 
 // ─── Main Layout Component ───
-export default function StudyLayout({ activeSection, onSectionChange, children }: StudyLayoutProps) {
+export default function StudyLayout({ children }: StudyLayoutProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const activeSection = (pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || 'dashboard') as Section;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<'login' | 'signup'>('login');
@@ -630,7 +632,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
   const { theme, setTheme } = useTheme();
 
   const store = useProgressStore();
-  const isAuthenticated = store.isAuthenticated || false;
+  const isAuthenticated = store.isLoggedIn || false;
   const isAdmin = store.isAdmin || false;
   const profile = store.profile || { name: 'Student', email: '' };
   const disabledFeatures = store.disabledFeatures || [];
@@ -667,9 +669,8 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
       toast.error('This feature is currently disabled by the admin');
       return;
     }
-    onSectionChange(section);
+    router.push('/' + section);
     setSidebarOpen(false);
-    window.history.pushState({}, '', '/' + section);
   };
 
   const openAuthModal = (tab: 'login' | 'signup') => {
@@ -680,6 +681,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
   const handleLogout = () => {
     store.logoutUser();
     toast.success('You have been signed out.');
+    router.push('/login');
   };
 
   const activityStatus = store.isLocked ? 'locked' : isAuthenticated ? 'online' : 'offline';
@@ -904,7 +906,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
                 )}
 
                 {/* Notification bell */}
-                <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => onSectionChange('notifications')}>
+                <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => router.push('/notifications')}>
                   <Bell className="w-4 h-4" />
                   {unreadNotificationCount > 0 && (
                     <motion.span
@@ -922,7 +924,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
-                        onClick={() => handleSectionChange('profile')}
+                        onClick={() => router.push('/profile')}
                         className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-muted/50 transition-colors"
                       >
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold shadow-sm overflow-hidden">
