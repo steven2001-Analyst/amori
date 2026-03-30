@@ -4,8 +4,13 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useProgressStore } from '@/lib/store';
 import StudyLayout from '@/components/layout/study-layout';
-import FloatingAIBot from '@/components/ai/floating-ai-bot';
-import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import { motion } from 'framer-motion';
+
+const FloatingAIBot = dynamic(
+  () => import('@/components/ai/floating-ai-bot'),
+  { ssr: false, loading: () => null }
+);
 import { Lock, Sparkles, Crown, Zap, ArrowRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -93,8 +98,10 @@ function PaywallOverlay({ featureId }: { featureId: string }) {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const store = useProgressStore();
-  const isLoggedIn = store.isLoggedIn || false;
+  const isLoggedIn = useProgressStore((s) => s.isLoggedIn) || false;
+  const isAdmin = useProgressStore((s) => s.isAdmin) || false;
+  const maintenanceMode = useProgressStore((s) => s.maintenanceMode) || false;
+  const canAccessFeature = useProgressStore((s) => s.canAccessFeature);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -111,10 +118,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Extract feature from pathname (e.g., /ai-assistant → ai-assistant)
   const featureId = pathname.replace(/^\/+|\/+$/g, '').split('/')[0] || 'dashboard';
 
-  // Check paywall
-  const canAccess = store.canAccessFeature(featureId);
-  const isAdmin = store.isAdmin || false;
-  const isMaintenance = store.maintenanceMode || false;
+  const canAccess = canAccessFeature(featureId);
+  const isMaintenance = maintenanceMode;
 
   // Admin-only route check
   if (featureId === 'admin' && !isAdmin) {
