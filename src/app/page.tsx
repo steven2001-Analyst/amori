@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import StudyLayout, { type Section } from '@/components/layout/study-layout';
 import AuthView from '@/components/auth/auth-view';
 import DashboardView from '@/components/dashboard/dashboard-view';
@@ -53,6 +53,25 @@ import { useProgressStore } from '@/lib/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Sparkles, Crown, Zap, ArrowRight, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+const validSections: Section[] = [
+  'dashboard', 'study', 'ai-assistant', 'ai-tutor', 'notes', 'flashcards',
+  'challenge', 'live-practice', 'practice', 'certificate', 'books', 'games',
+  'tools', 'sql-playground', 'community', 'chat', 'payment', 'achievements',
+  'streaks', 'portfolio', 'resources', 'resume', 'resume-analyzer',
+  'playground', 'assessment', 'visualization', 'notifications', 'peer-review',
+  'whiteboard', 'leaderboard', 'profile', 'settings', 'admin', 'advanced-tools',
+  'path-recommender', 'marketplace', 'premium-membership', 'referral-system',
+  'ai-sql-assistant', 'challenges', 'career-advisor', 'course-store',
+  'pro-certifications', 'mentorship',
+];
+
+const pathToSection = (pathname: string): Section => {
+  const trimmed = pathname.replace(/^\/+|\/+$/g, '');
+  if (!trimmed || trimmed === '/') return 'dashboard';
+  if (validSections.includes(trimmed as Section)) return trimmed as Section;
+  return 'dashboard';
+};
 
 function PaywallOverlay({ featureId, onUpgrade }: { featureId: string; onUpgrade: () => void }) {
   return (
@@ -129,9 +148,34 @@ function PaywallOverlay({ featureId, onUpgrade }: { featureId: string; onUpgrade
 }
 
 export default function Home() {
-  const [activeSection, setActiveSection] = useState<Section>('dashboard');
+  const [activeSection, setActiveSection] = useState<Section>(() => {
+    if (typeof window !== 'undefined') {
+      return pathToSection(window.location.pathname);
+    }
+    return 'dashboard';
+  });
   const store = useProgressStore();
   const isLoggedIn = store.isLoggedIn || false;
+  const isInitialMount = useRef(true);
+
+  // Sync URL bar when activeSection changes (skip initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    window.history.pushState({}, '', '/' + activeSection);
+  }, [activeSection]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const section = pathToSection(window.location.pathname);
+      setActiveSection(section);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   if (!isLoggedIn) {
     return <AuthView />;

@@ -439,13 +439,12 @@ export const useProgressStore = create<ProgressState>()(
       projects: [],
       savedResources: [],
       profile: {
-        name: 'Steven',
-        email: 'stevensaleh100@outlook.com',
+        name: 'Student',
+        email: '',
         bio: '',
         targetDate: '',
         dailyHours: 2,
         joinedDate: new Date().toISOString().split('T')[0],
-        profilePicture: undefined,
       },
       notes: {},
       flashcards: [],
@@ -522,23 +521,24 @@ export const useProgressStore = create<ProgressState>()(
       xp: 0,
       level: 1,
       xpHistory: [],
-      dailyQuests: [
-        { id: 'q1', title: 'Daily Learner', description: 'Complete at least 1 topic today', xpReward: 25, completed: false, type: 'study' },
-        { id: 'q2', title: 'Quiz Master', description: 'Score 80%+ on any quiz', xpReward: 50, completed: false, type: 'quiz' },
-        { id: 'q3', title: 'Bookworm', description: 'Spend 10 minutes reading', xpReward: 30, completed: false, type: 'books' },
-        { id: 'q4', title: 'Social Butterfly', description: 'Send a message in chat', xpReward: 15, completed: false, type: 'community' },
-        { id: 'q5', title: 'Streak Keeper', description: 'Maintain your current streak', xpReward: 40, completed: false, type: 'streak' },
-      ],
+      dailyQuests: (() => {
+        const allQuestTemplates = [
+          { id: 'q1', title: 'Daily Learner', description: 'Complete at least 1 topic today', xpReward: 25, type: 'study' },
+          { id: 'q2', title: 'Quiz Master', description: 'Score 80%+ on any quiz', xpReward: 50, type: 'quiz' },
+          { id: 'q3', title: 'Bookworm', description: 'Spend 10 minutes reading', xpReward: 30, type: 'books' },
+          { id: 'q4', title: 'Social Butterfly', description: 'Send a message in chat', xpReward: 15, type: 'community' },
+          { id: 'q5', title: 'Streak Keeper', description: 'Maintain your current streak', xpReward: 40, type: 'streak' },
+          { id: 'q6', title: 'Code Warrior', description: 'Write 5 lines of code in playground', xpReward: 35, type: 'tools' },
+          { id: 'q7', title: 'Data Explorer', description: 'Run a query in SQL Playground', xpReward: 45, type: 'tools' },
+        ];
+        const today = new Date().getDate();
+        const dayOfWeek = new Date().getDay();
+        const indices = [0, 1, 2, 3, 4].map((i) => (i + dayOfWeek) % allQuestTemplates.length);
+        return indices.map((idx) => ({ ...allQuestTemplates[idx], id: allQuestTemplates[idx].id + '-' + today, completed: false }));
+      })(),
 
       // Leaderboard initial state
-      leaderboardEntries: [
-        { name: 'Alex Chen', xp: 4520, level: 12, streak: 45, rank: 1 },
-        { name: 'Sarah Kim', xp: 3890, level: 10, streak: 32, rank: 2 },
-        { name: 'David Lee', xp: 3210, level: 9, streak: 28, rank: 3 },
-        { name: 'Priya Patel', xp: 2870, level: 8, streak: 21, rank: 4 },
-        { name: 'Mike Johnson', xp: 2340, level: 7, streak: 15, rank: 5 },
-        { name: 'You', xp: 0, level: 1, streak: 0, rank: 6 },
-      ],
+      leaderboardEntries: [],
 
       // Community Forum initial state
       communityPosts: [],
@@ -1100,34 +1100,9 @@ export const useProgressStore = create<ProgressState>()(
       },
 
       // Admin methods
-      loginAdmin: (username: string, password: string) => {
-        const state = get();
-        const adminEmail = 'stevensaleh100@outlook.com';
-        const adminPass = 'datatrack2026';
-        const isAdminCreds =
-          (username === 'admin' && password === adminPass) ||
-          (username === adminEmail && password === adminPass);
-
-        if (isAdminCreds) {
-          const loginTime = Date.now();
-          set({
-            currentUser: adminEmail,
-            isLoggedIn: true,
-            isAuthenticated: true,
-            isAdmin: true,
-            userRole: 'admin',
-            subscriptionStatus: 'active',
-            subscriptionPlan: 'pro',
-            loginEmail: adminEmail,
-            lastLoginTime: loginTime,
-            profile: { ...state.profile, name: 'Steven', email: adminEmail },
-            loginHistory: [
-              { email: adminEmail, timestamp: loginTime, action: 'login' },
-              ...(state.loginHistory || []).slice(0, 49),
-            ],
-          });
-          return true;
-        }
+      loginAdmin: (_username: string, _password: string) => {
+        // Admin login is handled server-side via /api/admin-login
+        // This method is kept for backward compatibility but always returns false
         return false;
       },
 

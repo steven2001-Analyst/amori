@@ -93,51 +93,79 @@ interface StudyLayoutProps {
   children: React.ReactNode;
 }
 
-const allNavItems: { id: Section; label: string; icon: React.ElementType; adminOnly?: boolean }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'study', label: 'Study Path', icon: BookOpen },
-  { id: 'ai-assistant', label: 'AI Assistant', icon: Bot },
-  { id: 'ai-tutor', label: 'AI Tutor', icon: GraduationCap },
-  { id: 'notes', label: 'Notes', icon: StickyNote },
-  { id: 'flashcards', label: 'Flashcards', icon: Layers },
-  { id: 'challenge', label: 'Daily Challenge', icon: Zap },
-  { id: 'live-practice', label: 'Live Practice', icon: Brain },
-  { id: 'practice', label: 'Practice', icon: Target },
-  { id: 'certificate', label: 'Certificates', icon: Award },
-  { id: 'books', label: 'Books Library', icon: Library },
-  { id: 'games', label: 'Games & Break', icon: Gamepad2 },
-  { id: 'tools', label: 'Study Tools', icon: Wrench },
-  { id: 'sql-playground', label: 'SQL Playground', icon: Database },
-  { id: 'path-recommender', label: 'Path Planner', icon: Route },
-  { id: 'community', label: 'Community', icon: Users },
-  { id: 'chat', label: 'Chat Room', icon: MessageCircle },
-  { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
-  { id: 'resources', label: 'Video & Resources', icon: Video },
-  { id: 'payment', label: 'Payment', icon: CreditCard },
-  { id: 'resume', label: 'Resume Builder', icon: FileText },
-  { id: 'resume-analyzer', label: 'Resume Analyzer', icon: ScanSearch },
-  { id: 'playground', label: 'Code Playground', icon: Terminal },
-  { id: 'assessment', label: 'Skill Assessment', icon: Target },
-  { id: 'visualization', label: 'Data Viz Studio', icon: BarChart3 },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-  { id: 'peer-review', label: 'Peer Review', icon: MessageSquarePlus },
-  { id: 'whiteboard', label: 'Whiteboard', icon: Pen },
-  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'settings', label: 'Settings', icon: SettingsIcon },
-  { id: 'achievements', label: 'Achievements', icon: Trophy },
-  { id: 'streaks', label: 'Study Streaks', icon: Flame },
-  { id: 'advanced-tools', label: 'Advanced Tools', icon: Code },
-  { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
-  { id: 'premium-membership', label: 'Premium', icon: Crown },
-  { id: 'referral-system', label: 'Referrals', icon: Gift },
-  { id: 'ai-sql-assistant', label: 'AI SQL Assistant', icon: Database },
-  { id: 'challenges', label: 'Challenge Arena', icon: Trophy },
-  { id: 'career-advisor', label: 'Career Advisor', icon: Compass },
-  { id: 'course-store', label: 'Course Store', icon: GraduationCap },
-  { id: 'pro-certifications', label: 'Pro Certifications', icon: Award },
-  { id: 'mentorship', label: 'Mentorship', icon: Users },
-  { id: 'admin', label: 'Admin', icon: Shield, adminOnly: true },
+interface NavItem {
+  id: Section;
+  label: string;
+  icon: React.ElementType;
+  adminOnly?: boolean;
+  category: 'learn' | 'ai' | 'community' | 'tools' | 'career' | 'admin';
+}
+
+const categoryLabels: Record<string, string> = {
+  learn: '📚 Learning',
+  ai: '🤖 AI & Analytics',
+  tools: '🔧 Developer Tools',
+  community: '💬 Community',
+  career: '🚀 Career & Growth',
+  admin: '⚙️ Account',
+};
+
+const allNavItems: NavItem[] = [
+  // ── Learn (Core) ──
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, category: 'learn' },
+  { id: 'study', label: 'Study Path', icon: BookOpen, category: 'learn' },
+  { id: 'notes', label: 'Notes', icon: StickyNote, category: 'learn' },
+  { id: 'flashcards', label: 'Flashcards', icon: Layers, category: 'learn' },
+  { id: 'books', label: 'Books Library', icon: Library, category: 'learn' },
+  { id: 'challenge', label: 'Daily Challenge', icon: Zap, category: 'learn' },
+  { id: 'practice', label: 'Practice', icon: Target, category: 'learn' },
+  { id: 'certificate', label: 'Certificates', icon: Award, category: 'learn' },
+  { id: 'streaks', label: 'Study Streaks', icon: Flame, category: 'learn' },
+  { id: 'leaderboard', label: 'Leaderboard', icon: Trophy, category: 'learn' },
+  { id: 'achievements', label: 'Achievements', icon: Trophy, category: 'learn' },
+  { id: 'games', label: 'Games & Break', icon: Gamepad2, category: 'learn' },
+
+  // ── AI & Analytics ──
+  { id: 'ai-assistant', label: 'AI Assistant', icon: Bot, category: 'ai' },
+  { id: 'ai-tutor', label: 'AI Tutor', icon: GraduationCap, category: 'ai' },
+  { id: 'live-practice', label: 'Live Practice', icon: Brain, category: 'ai' },
+  { id: 'ai-sql-assistant', label: 'AI SQL Assistant', icon: Database, category: 'ai' },
+  { id: 'path-recommender', label: 'Path Planner', icon: Route, category: 'ai' },
+  { id: 'career-advisor', label: 'Career Advisor', icon: Compass, category: 'ai' },
+
+  // ── Developer Tools ──
+  { id: 'tools', label: 'Study Tools', icon: Wrench, category: 'tools' },
+  { id: 'sql-playground', label: 'SQL Playground', icon: Database, category: 'tools' },
+  { id: 'playground', label: 'Code Playground', icon: Terminal, category: 'tools' },
+  { id: 'visualization', label: 'Data Viz Studio', icon: BarChart3, category: 'tools' },
+  { id: 'advanced-tools', label: 'Advanced Tools', icon: Code, category: 'tools' },
+  { id: 'assessment', label: 'Skill Assessment', icon: Target, category: 'tools' },
+  { id: 'whiteboard', label: 'Whiteboard', icon: Pen, category: 'tools' },
+
+  // ── Community ──
+  { id: 'community', label: 'Community', icon: Users, category: 'community' },
+  { id: 'chat', label: 'Chat Room', icon: MessageCircle, category: 'community' },
+  { id: 'peer-review', label: 'Peer Review', icon: MessageSquarePlus, category: 'community' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, category: 'community' },
+
+  // ── Career & Growth ──
+  { id: 'course-store', label: 'Course Store', icon: GraduationCap, category: 'career' },
+  { id: 'pro-certifications', label: 'Pro Certifications', icon: Award, category: 'career' },
+  { id: 'mentorship', label: 'Mentorship', icon: Users, category: 'career' },
+  { id: 'challenges', label: 'Challenge Arena', icon: Trophy, category: 'career' },
+  { id: 'portfolio', label: 'Portfolio', icon: Briefcase, category: 'career' },
+  { id: 'resume', label: 'Resume Builder', icon: FileText, category: 'career' },
+  { id: 'resume-analyzer', label: 'Resume Analyzer', icon: ScanSearch, category: 'career' },
+  { id: 'resources', label: 'Video & Resources', icon: Video, category: 'career' },
+  { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag, category: 'career' },
+
+  // ── Account & Settings ──
+  { id: 'payment', label: 'Payment', icon: CreditCard, category: 'admin' },
+  { id: 'premium-membership', label: 'Premium', icon: Crown, category: 'admin' },
+  { id: 'referral-system', label: 'Referrals', icon: Gift, category: 'admin' },
+  { id: 'profile', label: 'Profile', icon: User, category: 'admin' },
+  { id: 'settings', label: 'Settings', icon: SettingsIcon, category: 'admin' },
+  { id: 'admin', label: 'Admin', icon: Shield, adminOnly: true, category: 'admin' },
 ];
 
 // ─── Password Strength Meter ───
@@ -604,7 +632,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
   const store = useProgressStore();
   const isAuthenticated = store.isAuthenticated || false;
   const isAdmin = store.isAdmin || false;
-  const profile = store.profile || { name: 'Steven', email: 'stevensaleh100@outlook.com' };
+  const profile = store.profile || { name: 'Student', email: '' };
   const disabledFeatures = store.disabledFeatures || [];
   const maintenanceMode = store.maintenanceMode || false;
   const userNotifications = store.notifications || [];
@@ -641,6 +669,7 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
     }
     onSectionChange(section);
     setSidebarOpen(false);
+    window.history.pushState({}, '', '/' + section);
   };
 
   const openAuthModal = (tab: 'login' | 'signup') => {
@@ -700,59 +729,79 @@ export default function StudyLayout({ activeSection, onSectionChange, children }
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeSection === item.id;
-            const isDisabled = disabledFeatures.includes(item.id);
-            return (
-              <TooltipProvider key={item.id} delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => handleSectionChange(item.id)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
-                        isDisabled && 'opacity-50 cursor-not-allowed',
-                        !isDisabled && isActive
-                          ? 'bg-white/15 text-white shadow-lg shadow-emerald-900/30'
-                          : !isDisabled && 'text-emerald-100/70 hover:text-white hover:bg-white/8'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
-                          isActive ? 'bg-emerald-400/20' : 'bg-transparent'
-                        )}
-                      >
-                        <Icon
-                          className={cn(
-                            'w-4 h-4 transition-colors',
-                            isActive ? 'text-emerald-300' : ''
-                          )}
-                        />
-                      </div>
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {isDisabled && (
-                        <Badge className="h-4 px-1.5 text-[9px] bg-red-400/80 text-white border-0 font-bold">Disabled</Badge>
-                      )}
-                      {item.adminOnly && isAdmin && (
-                        <Badge className="h-4 px-1.5 text-[9px] bg-amber-400 text-amber-900 border-0 font-bold">ADMIN</Badge>
-                      )}
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeIndicator"
-                          className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
-                        />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="lg:hidden">
-                    {item.label}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          })}
+          {(() => {
+            // Group nav items by category
+            const groupedNav: { category: string; items: NavItem[] }[] = [];
+            let currentCategory = '';
+            for (const item of navItems) {
+              if (item.category !== currentCategory) {
+                groupedNav.push({ category: item.category, items: [item] });
+                currentCategory = item.category;
+              } else {
+                groupedNav[groupedNav.length - 1].items.push(item);
+              }
+            }
+            return groupedNav.map((group) => (
+              <div key={group.category}>
+                <p className="px-4 py-2 text-[10px] uppercase tracking-wider text-emerald-300/50 font-semibold mt-3 first:mt-0">
+                  {categoryLabels[group.category] || group.category}
+                </p>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeSection === item.id;
+                  const isDisabled = disabledFeatures.includes(item.id);
+                  return (
+                    <TooltipProvider key={item.id} delayDuration={0}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={() => handleSectionChange(item.id)}
+                            className={cn(
+                              'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                              isDisabled && 'opacity-50 cursor-not-allowed',
+                              !isDisabled && isActive
+                                ? 'bg-white/15 text-white shadow-lg shadow-emerald-900/30'
+                                : !isDisabled && 'text-emerald-100/70 hover:text-white hover:bg-white/8'
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                'w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200',
+                                isActive ? 'bg-emerald-400/20' : 'bg-transparent'
+                              )}
+                            >
+                              <Icon
+                                className={cn(
+                                  'w-4 h-4 transition-colors',
+                                  isActive ? 'text-emerald-300' : ''
+                                )}
+                              />
+                            </div>
+                            <span className="flex-1 text-left">{item.label}</span>
+                            {isDisabled && (
+                              <Badge className="h-4 px-1.5 text-[9px] bg-red-400/80 text-white border-0 font-bold">Disabled</Badge>
+                            )}
+                            {item.adminOnly && isAdmin && (
+                              <Badge className="h-4 px-1.5 text-[9px] bg-amber-400 text-amber-900 border-0 font-bold">ADMIN</Badge>
+                            )}
+                            {isActive && (
+                              <motion.div
+                                layoutId="activeIndicator"
+                                className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
+                              />
+                            )}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="lg:hidden">
+                          {item.label}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
+              </div>
+            ));
+          })()}
         </nav>
 
         {/* Footer with theme toggle */}

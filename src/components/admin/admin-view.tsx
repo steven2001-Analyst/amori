@@ -15,6 +15,7 @@ import {
   BarChart2, Pen, Bell, MessageSquarePlus, Palette,
   Save, Power, ToggleRight, Import, DatabaseBackup, HardDrive,
   SlidersHorizontal,
+  Loader2,
 } from 'lucide-react';
 import { subjects, getAllTopics } from '@/lib/study-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -550,18 +551,44 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const { loginAdmin } = useProgressStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const store = useProgressStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const success = loginAdmin(username, password);
-    if (success) {
-      toast.success('Welcome back, Admin!');
-      onLogin();
-    } else {
-      setError('Invalid username or password');
-      toast.error('Login failed');
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        store.setState({
+          isLoggedIn: true,
+          isAuthenticated: true,
+          isAdmin: true,
+          userRole: 'admin' as const,
+          subscriptionStatus: 'active' as const,
+          subscriptionPlan: 'pro' as const,
+          currentUser: data.adminEmail,
+          loginEmail: data.adminEmail,
+          lastLoginTime: Date.now(),
+          profile: { ...store.profile, name: data.adminName, email: data.adminEmail },
+        });
+        toast.success('Welcome back, Admin!');
+        onLogin();
+      } else {
+        setError(data.error || 'Invalid credentials');
+        toast.error('Login failed');
+      }
+    } catch {
+      setError('Connection error. Please try again.');
+      toast.error('Network error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -632,10 +659,20 @@ function AdminLogin({ onLogin }: { onLogin: () => void }) {
 
               <Button
                 type="submit"
+                disabled={isLoading}
                 className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/20"
               >
-                <Shield className="w-4 h-4 mr-2" />
-                Sign In to Admin
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Sign In to Admin
+                  </>
+                )}
               </Button>
             </form>
 
