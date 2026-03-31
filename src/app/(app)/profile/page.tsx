@@ -1,19 +1,22 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Edit2, Save, X, MapPin, Briefcase, Camera, Trash2 } from 'lucide-react'
+import { Edit2, Save, X, MapPin, Briefcase, Camera, Trash2, ImagePlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/store'
 
 const ALL_INTERESTS = ['Travel', 'Music', 'Fitness', 'Cooking', 'Movies', 'Reading', 'Gaming', 'Photography', 'Art', 'Sports', 'Coffee', 'Nature', 'Dancing', 'Tech', 'Fashion', 'Yoga']
+
+interface PhotoItem { url: string; isProfile: boolean }
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ name: '', bio: '', interests: [] as string[], location: '', occupation: '' })
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
+  const [uploading, setUploading] = useState<string | null>(null) // null, 'avatar', 'gallery'
   const fileRef = useRef<HTMLInputElement>(null)
+  const galleryFileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const updateProfile = useAuthStore(s => s.updateProfile)
 
@@ -37,7 +40,7 @@ export default function ProfilePage() {
     if (!file) return
     if (!file.type.startsWith('image/')) { toast.error('Please select an image'); return }
     if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
-    setUploading(true)
+    setUploading('avatar')
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('isProfile', 'true')
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
@@ -47,12 +50,33 @@ export default function ProfilePage() {
         setProfile((p: any) => ({ ...p, avatar: url }))
         toast.success('Photo uploaded!')
       } else { const err = await res.json(); toast.error(err.error || 'Upload failed') }
-    } catch { toast.error('Upload failed') } finally { setUploading(false); e.target.value = '' }
+    } catch { toast.error('Upload failed') } finally { setUploading(null); e.target.value = '' }
+  }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!file.type.startsWith('image/')) { toast.error('Please select an image'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+    setUploading('gallery')
+    try {
+      const fd = new FormData(); fd.append('file', file); fd.append('isProfile', 'false')
+      const res = await fetch('/api/upload', { method: 'POST', body: fd })
+      if (res.ok) {
+        const { url } = await res.json()
+        const newPhotos: PhotoItem[] = [...(profile.photos || []), { url, isProfile: false }]
+        setProfile((p: any) => ({ ...p, photos: newPhotos }))
+        toast.success('Photo added to gallery!')
+      } else { const err = await res.json(); toast.error(err.error || 'Upload failed') }
+    } catch { toast.error('Upload failed') } finally { setUploading(null); e.target.value = '' }
   }
 
   function toggleInterest(i: string) { setForm(f => ({ ...f, interests: f.interests.includes(i) ? f.interests.filter(x => x !== i) : [...f.interests, i] })) }
 
   if (!profile) return <div className="mx-auto max-w-2xl px-4 py-8"><h1 className="text-2xl font-bold mb-6">Profile</h1><div className="flex justify-center py-20"><div className="h-8 w-8 animate-spin rounded-full border-2 border-rose-500 border-t-transparent" /></div></div>
+
+  const photos = profile.photos || []
+  const profilePhoto = photos.find((p: PhotoItem) => p.isProfile)?.url || profile.avatar
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -62,12 +86,12 @@ export default function ProfilePage() {
         <div className="relative h-48 bg-gradient-to-br from-rose-500 to-pink-600">
           <div className="absolute -bottom-12 left-6 flex items-end gap-3">
             <div className="relative">
-              {profile.avatar ? (
-                <img src={profile.avatar} alt="" className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg" />
+              {profilePhoto ? (
+                <img src={profilePhoto} alt="" className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-lg" />
               ) : (
                 <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-rose-400 to-pink-400 text-3xl font-bold text-white shadow-lg">{profile.name ? profile.name[0].toUpperCase() : '?'}</div>
               )}
-              {uploading && <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40"><div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /></div>}
+              {uploading === 'avatar' && <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40"><div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" /></div>}
               {editing && <button onClick={() => fileRef.current?.click()} className="absolute bottom-1 right-1 flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-white shadow-md hover:bg-rose-600 transition"><Camera className="h-3.5 w-3.5" /></button>}
             </div>
           </div>
@@ -101,6 +125,45 @@ export default function ProfilePage() {
             </>
           )}
         </div>
+      </div>
+
+      {/* Photo Gallery */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">My Photos</h2>
+          <button
+            onClick={() => galleryFileRef.current?.click()}
+            disabled={uploading === 'gallery'}
+            className="flex items-center gap-1.5 text-sm text-rose-600 hover:underline disabled:opacity-50"
+          >
+            {uploading === 'gallery' ? (
+              <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-500 border-t-transparent" />Uploading...</>
+            ) : (
+              <><ImagePlus className="h-4 w-4" />Add Photo</>
+            )}
+          </button>
+          <input ref={galleryFileRef} type="file" accept="image/*" onChange={handleGalleryUpload} className="hidden" />
+        </div>
+        {photos.length === 0 && !profilePhoto ? (
+          <div className="rounded-xl border border-dashed bg-muted/30 p-8 text-center">
+            <ImagePlus className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No photos yet. Add some to your gallery!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            {profilePhoto && (
+              <div className="relative aspect-square rounded-xl overflow-hidden group">
+                <img src={profilePhoto} alt="Profile" className="h-full w-full object-cover" />
+                <div className="absolute bottom-1 left-1 rounded-full bg-rose-500 px-2 py-0.5 text-[10px] text-white font-medium">Main</div>
+              </div>
+            )}
+            {photos.filter((p: PhotoItem) => !p.isProfile).map((photo: PhotoItem, idx: number) => (
+              <div key={idx} className="relative aspect-square rounded-xl overflow-hidden">
+                <img src={photo.url} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

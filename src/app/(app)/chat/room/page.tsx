@@ -9,6 +9,18 @@ import { toast } from 'sonner'
 interface Msg { id: string; matchId: string; senderId: string; content: string; createdAt: string }
 interface OtherUser { id: string; name: string; avatar: string | null; age: number; isOnline: boolean }
 
+function UserAvatar({ avatar, name, size = 'md' }: { avatar: string | null; name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = { sm: 'h-8 w-8 text-xs', md: 'h-10 w-10 text-sm', lg: 'h-12 w-12 text-base' }
+  if (avatar) {
+    return <img src={avatar} alt={name} className={`${sizeClasses[size]} rounded-full object-cover`} />
+  }
+  return (
+    <div className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-400 font-semibold text-white`}>
+      {name ? name[0].toUpperCase() : '?'}
+    </div>
+  )
+}
+
 export default function ChatRoomPage() {
   const params = useSearchParams()
   const matchId = params.get('matchId')
@@ -76,7 +88,7 @@ export default function ChatRoomPage() {
       <div className="flex items-center gap-3 border-b px-4 py-3 bg-white">
         <button onClick={() => router.push('/chat')} className="lg:hidden text-muted-foreground hover:text-foreground"><ArrowLeft className="h-5 w-5" /></button>
         <div className="relative">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-400 text-sm font-semibold text-white">{otherUser?.name ? otherUser.name[0].toUpperCase() : '?'}</div>
+          <UserAvatar avatar={otherUser?.avatar || null} name={otherUser?.name || '?'} size="md" />
           {otherUser?.isOnline && <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white" />}
         </div>
         <div className="flex-1 min-w-0"><h2 className="font-semibold truncate">{otherUser?.name || 'Loading...'}</h2><p className="text-xs text-muted-foreground">{otherUser?.isOnline ? '● Online' : 'Offline'}</p></div>
@@ -93,7 +105,8 @@ export default function ChatRoomPage() {
         {messages.map((msg) => {
           const isMine = msg.senderId === myId
           const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          return <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+          return <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'} gap-2`}>
+            {!isMine && <UserAvatar avatar={otherUser?.avatar || null} name={otherUser?.name || '?'} size="sm" />}
             <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${isMine ? 'bg-rose-500 text-white rounded-br-md' : 'bg-muted rounded-bl-md'}`}>
               <p className="whitespace-pre-wrap break-words">{msg.content}</p>
               <p className={`mt-1 text-[10px] ${isMine ? 'text-white/50' : 'text-muted-foreground'}`}>{time}</p>

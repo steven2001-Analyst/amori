@@ -6,6 +6,18 @@ import Link from 'next/link'
 
 interface MatchItem { matchId: string; user: { id: string; name: string; avatar: string | null; age: number; isOnline: boolean }; lastMessage: string | null; lastMessageTime: string | null }
 
+function UserAvatar({ avatar, name, size = 'md' }: { avatar: string | null; name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = { sm: 'h-8 w-8 text-xs', md: 'h-12 w-12 text-sm font-bold', lg: 'h-14 w-14 text-lg font-bold' }
+  if (avatar) {
+    return <img src={avatar} alt={name} className={`${sizeClasses[size]} rounded-full object-cover shadow-md`} />
+  }
+  return (
+    <div className={`${sizeClasses[size]} flex items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-400 text-white shadow-md`}>
+      {name ? name[0].toUpperCase() : '?'}
+    </div>
+  )
+}
+
 function timeAgo(dateStr: string) {
   const now = Date.now()
   const then = new Date(dateStr).getTime()
@@ -43,7 +55,7 @@ export default function MatchesPage() {
           {matches.map(m => (
             <Link key={m.matchId} href={`/chat/room?matchId=${m.matchId}`} className="flex items-center gap-4 rounded-xl border bg-card p-4 hover:shadow-md hover:border-rose-100 transition-all group">
               <div className="relative shrink-0">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-400 text-lg font-bold text-white shadow-md">{m.user.name ? m.user.name[0].toUpperCase() : '?'}</div>
+                <UserAvatar avatar={m.user.avatar} name={m.user.name} size="lg" />
                 {m.user.isOnline && <div className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white" />}
               </div>
               <div className="flex-1 min-w-0">

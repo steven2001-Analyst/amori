@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Trash2, Save } from 'lucide-react'
+import { LogOut, Trash2, Save, Eye, EyeOff, Globe } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/lib/store'
 
@@ -13,6 +13,8 @@ export default function SettingsPage() {
   const [ageRangeMin, setAgeRangeMin] = useState(18)
   const [ageRangeMax, setAgeRangeMax] = useState(50)
   const [maxDistance, setMaxDistance] = useState(50)
+  const [showOnline, setShowOnline] = useState(true)
+  const [showProfile, setShowProfile] = useState(true)
   const [saving, setSaving] = useState(false)
   const router = useRouter()
   const logout = useAuthStore((s) => s.logout)
@@ -25,14 +27,24 @@ export default function SettingsPage() {
       setAgeRangeMin(data.ageRangeMin || 18)
       setAgeRangeMax(data.ageRangeMax || 50)
       setMaxDistance(data.maxDistance || 50)
+      setShowOnline(data.showOnline !== false)
+      setShowProfile(data.showProfile !== false)
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   async function handleSave() {
     setSaving(true)
     try {
-      const res = await fetch('/api/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, bio, ageRangeMin, ageRangeMax, maxDistance }) })
-      if (res.ok) { toast.success('Settings saved!') } else toast.error('Failed to save')
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, bio, ageRangeMin, ageRangeMax, maxDistance, showOnline, showProfile })
+      })
+      if (res.ok) {
+        toast.success('Settings saved!')
+      } else {
+        toast.error('Failed to save')
+      }
     } catch { toast.error('Something went wrong') } finally { setSaving(false) }
   }
 
@@ -74,9 +86,31 @@ export default function SettingsPage() {
         {/* Privacy */}
         <div className="rounded-xl border bg-card p-6">
           <h2 className="font-semibold mb-4">Privacy</h2>
-          <div className="space-y-3">
-            <label className="flex items-center justify-between"><span className="text-sm">Show online status</span><input type="checkbox" defaultChecked className="rounded" /></label>
-            <label className="flex items-center justify-between"><span className="text-sm">Show profile to others</span><input type="checkbox" defaultChecked className="rounded" /></label>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50"><Eye className="h-4 w-4 text-green-600" /></div>
+                <div><span className="text-sm font-medium">Show online status</span><p className="text-xs text-muted-foreground">Let others see when you&apos;re active</p></div>
+              </div>
+              <button
+                onClick={() => setShowOnline(!showOnline)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showOnline ? 'bg-rose-500' : 'bg-gray-200'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow-sm ${showOnline ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50"><Globe className="h-4 w-4 text-blue-600" /></div>
+                <div><span className="text-sm font-medium">Show profile to others</span><p className="text-xs text-muted-foreground">Allow your profile to appear in Discover</p></div>
+              </div>
+              <button
+                onClick={() => setShowProfile(!showProfile)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showProfile ? 'bg-rose-500' : 'bg-gray-200'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform shadow-sm ${showProfile ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
           </div>
         </div>
 
