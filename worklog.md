@@ -181,3 +181,36 @@ Task: Fix chat API otherUser + create realtime polling helper
 - Tracks `lastMessageId` to only fire callback for truly new messages
 - Returns `{ start, stop }` for lifecycle management in React useEffect
 - Designed as a drop-in replacement for future Socket.io integration
+
+---
+## Task ID: 5 - photo-upload-api
+Agent: Sub Agent
+Task: Implement photo upload system (Supabase Storage + /api/upload endpoint)
+
+### Work Summary
+
+#### 1. Created Supabase Storage bucket setup script
+**File:** `scripts/setup-storage.sh` (new)
+- POSTs to Supabase Storage API (`/storage/v1/bucket`) to create `photos` bucket (public, 5MB file size limit)
+- PUTs to `/storage/v1/bucket/photos` to ensure public visibility (idempotent)
+- Includes CORS configuration attempt (404 — CORS not needed for server-side uploads)
+- Successfully executed: bucket created and set to public
+
+#### 2. Created /api/upload POST endpoint
+**File:** `src/app/api/upload/route.ts` (new)
+- Accepts `{ file: string (base64), isProfile: boolean }` body
+- Verifies auth via `amori-token` cookie using `verifyToken()` from `@/lib/auth`
+- Strips base64 data URI prefix, determines MIME type and extension (jpg, png, gif, webp)
+- Converts base64 to `Buffer`, generates filename: `profile-{userId}-{timestamp}.{ext}`
+- Uploads binary to Supabase Storage `photos` bucket using `fetch` + `FormData` + `Blob`
+- Gets public URL: `{storageUrl}/storage/v1/object/public/photos/{filename}`
+- If `isProfile=true`: updates `User.avatar` field via Supabase REST
+- If `isProfile=false`: inserts new `Photo` record (userId, url, order, isProfile) via Supabase REST
+- Returns `{ url: string }` on success
+
+#### 3. Fixed .gitignore
+- Changed `upload/` to `/upload/` in `.gitignore` — the unqualified pattern was matching `src/app/api/upload/` and preventing the route file from being committed
+
+#### 4. Build verification
+- `npx next build` passes cleanly with all 25 routes (including new `/api/upload`)
+- Two commits pushed: initial commit + gitignore fix commit
