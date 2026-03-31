@@ -255,12 +255,21 @@ function Sidebar() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
+  // Only read from localStorage/Zustand AFTER mount to avoid hydration mismatch
   useEffect(() => {
     setMounted(true)
+    // Read the store value directly (bypass React render cycle)
+    const state = useAuthStore.getState()
+    setIsAuthenticated(state.isAuthenticated)
+    // Subscribe to future changes
+    const unsub = useAuthStore.subscribe((s) => {
+      setIsAuthenticated(s.isAuthenticated)
+    })
+    return unsub
   }, [])
 
   useEffect(() => {
