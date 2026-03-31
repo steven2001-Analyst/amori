@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const onboarded = !!(user.age && user.gender && user.interests !== '[]')
+    const onboarded = !!(user.age && user.gender && Array.isArray(user.interests) && user.interests.length > 0)
 
     return NextResponse.json({ ...user, onboarded })
   } catch (error) {

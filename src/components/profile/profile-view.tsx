@@ -73,7 +73,7 @@ export default function ProfileView() {
           bio: data.bio || '',
           location: data.location || '',
           occupation: data.occupation || '',
-          interests: JSON.parse(data.interests || '[]'),
+          interests: Array.isArray(data.interests) ? data.interests : [],
           lookingFor: data.lookingFor || '',
           maxDistance: data.maxDistance?.toString() || '50',
           ageRangeMin: data.ageRangeMin?.toString() || '18',

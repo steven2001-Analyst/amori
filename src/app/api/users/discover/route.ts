@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       m.user1Id === payload.userId ? m.user2Id : m.user1Id
     ))
 
-    const userInterests: string[] = JSON.parse(user.interests || '[]')
+    const userInterests: string[] = Array.isArray(user.interests) ? user.interests : []
 
     let users = await db.user.findMany({
       where: {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     users = users.map((u) => ({
       ...u,
-      interests: JSON.parse(u.interests || '[]'),
+      interests: Array.isArray(u.interests) ? u.interests : [],
     }))
 
     return NextResponse.json(users)
