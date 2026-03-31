@@ -50,7 +50,7 @@ server.log
 # Skills directory
 /skills/.env
 skills/
-upload/
+/upload/
 node_modules/
 .next/
 .env
