@@ -1,47 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { verifyToken } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 
 export async function PUT(request: NextRequest) {
   try {
-    const token = request.cookies.get('amori-token')?.value
-    if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-
-    const payload = await verifyToken(token)
-    if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     const body = await request.json()
-    const { name, age, gender, bio, location, occupation, interests, lookingFor, maxDistance, ageRangeMin, ageRangeMax, avatar } = body
+    const allowed = ['name', 'bio', 'age', 'gender', 'interests', 'location', 'occupation', 'lookingFor', 'maxDistance', 'ageRangeMin', 'ageRangeMax']
+    const updates: Record<string, any> = {}
+    for (const key of allowed) { if (body[key] !== undefined) updates[key] = body[key] }
+    if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
 
-    const updateData: Record<string, unknown> = {}
-    if (name !== undefined) updateData.name = name
-    if (age !== undefined) updateData.age = parseInt(age) || 0
-    if (gender !== undefined) updateData.gender = gender
-    if (bio !== undefined) updateData.bio = bio
-    if (location !== undefined) updateData.location = location
-    if (occupation !== undefined) updateData.occupation = occupation
-    if (interests !== undefined) updateData.interests = interests // Supabase handles arrays natively
-    if (lookingFor !== undefined) updateData.lookingFor = lookingFor
-    if (maxDistance !== undefined) updateData.maxDistance = parseInt(maxDistance) || 50
-    if (ageRangeMin !== undefined) updateData.ageRangeMin = parseInt(ageRangeMin) || 18
-    if (ageRangeMax !== undefined) updateData.ageRangeMax = parseInt(ageRangeMax) || 65
-    if (avatar !== undefined) updateData.avatar = avatar
-
-    const { data: user, error } = await supabase
-      .from('User')
-      .update(updateData)
-      .eq('id', payload.userId)
-      .select('id, email, name, avatar, age, gender, bio, interests, location, occupation, lookingFor, maxDistance, ageRangeMin, ageRangeMax, isPremium')
-      .single()
-
-    if (error || !user) {
-      console.error('Profile update error:', error)
-      return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+    if (updates.age || updates.gender || (updates.interests && updates.interests.length > 0)) {
+      const { data: current } = await supabase.from('User').select('age, gender, interests').eq('id', session.userId).single()
+      if (current) {
+        const a = updates.age || current.age
+        const g = updates.gender || current.gender
+        const i = updates.interests || current.interests
+        if (a && g && i && i.length > 0) updates.onboarded = true
+      }
     }
 
-    return NextResponse.json(user)
-  } catch (error) {
-    console.error('Profile update error:', error)
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
-  }
+    const { data, error } = await supabase.from('User').update(updates).eq('id', session.userId).select().single()
+    if (error) { console.error('Profile update error:', error); return NextResponse.json({ error: 'Failed to update' }, { status: 500 }) }
+    const interests: string[] = Array.isArray(data.interests) ? data.interests : []
+    return NextResponse.json({ id: data.id, email: data.email, name: data.name, avatar: data.avatar, age: data.age, gender: data.gender, bio: data.bio, interests, location: data.location, occupation: data.occupation, lookingFor: data.lookingFor, isPremium: data.isPremium, onboarded: data.onboarded })
+  } catch (error) { console.error('Profile error:', error); return NextResponse.json({ error: 'Something went wrong' }, { status: 500 }) }
 }

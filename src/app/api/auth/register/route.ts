@@ -4,91 +4,20 @@ import { hashPassword, createToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password, name } = body
+    const { name, email, password } = await request.json()
+    if (!name || !email || !password) return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+    if (password.length < 6) return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
 
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: 'Email, password, and name are required' }, { status: 400 })
-    }
-
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
-    }
-
-    const { data: existingUser } = await supabase
-      .from('User')
-      .select('id')
-      .eq('email', email)
-      .single()
-
-    if (existingUser) {
-      return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
-    }
+    const { data: existing } = await supabase.from('User').select('id').eq('email', email).single()
+    if (existing) return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
 
     const passwordHash = await hashPassword(password)
+    const { data: user, error } = await supabase.from('User').insert({ name, email, passwordHash, interests: [], isPremium: false, isOnline: true, swipesToday: 0 }).select().single()
+    if (error) { console.error('Register error:', error); return NextResponse.json({ error: 'Failed to create account' }, { status: 500 }) }
 
-    const { data: user, error: createError } = await supabase
-      .from('User')
-      .insert({
-        email,
-        passwordHash,
-        name,
-        age: 0,
-        gender: '',
-        bio: '',
-        interests: [],
-        location: '',
-        occupation: '',
-        lookingFor: '',
-        maxDistance: 50,
-        ageRangeMin: 18,
-        ageRangeMax: 65,
-        isOnline: false,
-        swipesToday: 0,
-        swipesResetDate: new Date().toISOString(),
-        isPremium: false,
-      })
-      .select()
-      .single()
-
-    if (createError || !user) {
-      console.error('Create user error:', createError)
-      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
-    }
-
-    const userToken = await createToken({ userId: user.id, email: user.email })
-
-    const interests: string[] = Array.isArray(user.interests) ? user.interests : []
-
-    const response = NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar,
-        age: user.age,
-        gender: user.gender,
-        bio: user.bio,
-        interests,
-        location: user.location,
-        occupation: user.occupation,
-        isPremium: user.isPremium,
-        onboarded: !!(user.age && user.gender && interests.length > 0),
-      },
-      token: userToken,
-    })
-
-    response.cookies.set('amori-token', userToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7,
-      path: '/',
-    })
-
+    const token = await createToken({ userId: user.id, email: user.email })
+    const response = NextResponse.json({ user: { id: user.id, email: user.email, name: user.name, avatar: user.avatar, age: user.age, gender: user.gender, bio: user.bio, interests: [], isPremium: false, onboarded: false }, token })
+    response.cookies.set('amori-token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' })
     return response
-  } catch (error) {
-    console.error('Register error:', error)
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
-  }
+  } catch (error) { console.error('Register error:', error); return NextResponse.json({ error: 'Something went wrong' }, { status: 500 }) }
 }

@@ -1,42 +1,12 @@
 'use client'
-
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string }
-  reset: () => void
-}) {
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
   return (
-    <html>
-      <body style={{ padding: 40, fontFamily: 'system-ui, sans-serif' }}>
-        <h2 style={{ color: '#e11d48', marginBottom: 16 }}>Something went wrong!</h2>
-        <p style={{ color: '#666', marginBottom: 12 }}>Error: {error.message || 'Unknown error'}</p>
-        <pre style={{ 
-          background: '#f5f5f5', 
-          padding: 16, 
-          borderRadius: 8, 
-          fontSize: 12, 
-          overflow: 'auto',
-          maxHeight: 300,
-          border: '1px solid #ddd'
-        }}>{error.stack || 'No stack trace'}</pre>
-        <button 
-          onClick={reset}
-          style={{
-            marginTop: 16,
-            padding: '10px 24px',
-            background: '#f43f5e',
-            color: 'white',
-            border: 'none',
-            borderRadius: 8,
-            cursor: 'pointer',
-            fontSize: 14,
-          }}
-        >
-          Try again
-        </button>
-      </body>
-    </html>
+    <div className="flex min-h-screen items-center justify-center p-8">
+      <div className="max-w-md text-center">
+        <h2 className="text-2xl font-bold text-rose-600 mb-4">Something went wrong!</h2>
+        <p className="text-muted-foreground mb-6">{error.message || 'An unexpected error occurred.'}</p>
+        <button onClick={reset} className="px-6 py-2 bg-rose-500 text-white rounded-lg hover:bg-rose-600 transition">Try again</button>
+      </div>
+    </div>
   )
 }
