@@ -257,13 +257,19 @@ function Sidebar() {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
+
   useEffect(() => {
-    if (!isAuthenticated) {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted && !isAuthenticated) {
       router.push('/login')
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router, mounted])
 
-  if (!isAuthenticated) {
+  if (!mounted || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="flex flex-col items-center gap-3">

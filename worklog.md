@@ -129,3 +129,32 @@ Complete transformation of the DataTrack Pro project into a production-ready dat
 - No cache-disabling meta tags
 - Mobile-first responsive design
 - Dark mode support via next-themes
+
+---
+## Task ID: 3 - supabase-migration
+### Work Task
+Migrate all API routes from Prisma ORM (direct PostgreSQL TCP connection) to @supabase/supabase-js REST API (HTTPS) to resolve IPv6-only server/Vercel connectivity issues.
+
+### Work Summary
+- Created `/home/z/amori/src/lib/supabase.ts` — Supabase client with service role key
+- Migrated 10 API routes from `db` (Prisma) to `supabase` (REST API):
+  1. `/api/auth/login` — findUnique → select().eq().single(), update → update().eq()
+  2. `/api/auth/register` — findUnique + create → select().eq().single() + insert().select().single()
+  3. `/api/auth/session` — findUnique with select → select().eq().single()
+  4. `/api/users/discover` — findMany with include → separate queries for matches, users, photos
+  5. `/api/users/swipe` — findFirst with OR → .or() filter, increment → manual read + update
+  6. `/api/matches` — findMany with includes → separate queries for matches, users, last messages
+  7. `/api/notifications` — findMany with include → separate queries for notifications + users
+  8. `/api/messages/room` — findMany + create → select().eq() + insert().select().single()
+  9. `/api/profile` — update with select → update().eq().select().single(); removed JSON.stringify for interests (Supabase handles arrays natively)
+  10. `/api/notifications/[id]` — findUnique + update → select().eq().single() + update().eq()
+- Migrated `/api/auth/seed/route.ts` to use Supabase for seeding sample users
+- Removed `"postinstall": "prisma generate"` from package.json (no longer needed)
+- Updated `.env` with NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY
+- Kept `@prisma/client` and `prisma` packages (harmless, not removed)
+- Auth system (JWT/bcrypt in auth.ts) unchanged — only database layer changed
+- All API response shapes preserved — frontend needs no changes
+- Removed debug field from login error response
+- Supabase TEXT[] arrays returned as proper JS arrays automatically
+- Lint passes with zero errors, build succeeds with all 24 routes
+- Committed and pushed to amori branch
