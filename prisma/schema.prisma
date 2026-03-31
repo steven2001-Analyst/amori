@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String
+  passwordHash    String
+  avatar          String?
+  bio             String    @default("")
+  age             Int?
+  gender          String    @default("")
+  location        String    @default("")
+  occupation      String    @default("")
+  interests       String[]  @default([])
+  lookingFor      String    @default("")
+  maxDistance      Int       @default(50)
+  ageRangeMin     Int       @default(18)
+  ageRangeMax     Int       @default(65)
+  isOnline        Boolean   @default(false)
+  lastSeen        DateTime  @default(now())
+  isPremium       Boolean   @default(false)
+  premiumExpiry   DateTime?
+  swipesToday     Int       @default(0)
+  swipesResetDate DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  photos          Photo[]
+  matches1        Match[]   @relation("User1Matches")
+  matches2        Match[]   @relation("User2Matches")
+  sentMessages    Message[] @relation("SentMessages")
+  notifications   Notification[]
+  reports         Report[]  @relation("ReporterReports")
+  reportsReceived Report[]  @relation("ReportedReports")
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  order     Int      @default(0)
+  isProfile Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Match {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  type      String   @default("liked")
+  createdAt DateTime @default(now())
+
+  user1    User      @relation("User1Matches", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2    User      @relation("User2Matches", fields: [user2Id], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([user1Id, user2Id])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([type])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  matchId   String
+  senderId  String
+  content   String
+  type      String   @default("text")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  match  Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId])
+  @@index([senderId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   @default("system")
+  title      String
+  body       String?
+  fromUserId String?
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  reporterId  String
+  reportedId  String
+  reason      String
+  description String?
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  reporter User @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reported User @relation("ReportedReports", fields: [reportedId], references: [id], onDelete: Cascade)
+
+  @@index([reporterId])
+  @@index([reportedId])
+}
