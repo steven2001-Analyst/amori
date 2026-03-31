@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { verifyPassword, createToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -11,8 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
     }
 
-    const user = await db.user.findUnique({ where: { email } })
-    if (!user) {
+    const { data: user, error: userError } = await supabase
+      .from('User')
+      .select('*')
+      .eq('email', email)
+      .single()
+
+    if (userError || !user) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
@@ -21,12 +26,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
     }
 
-    await db.user.update({
-      where: { id: user.id },
-      data: { isOnline: true, lastSeen: new Date() },
-    })
+    await supabase
+      .from('User')
+      .update({ isOnline: true, lastSeen: new Date().toISOString() })
+      .eq('id', user.id)
 
     const token = await createToken({ userId: user.id, email: user.email })
+
+    const interests: string[] = Array.isArray(user.interests) ? user.interests : []
 
     const response = NextResponse.json({
       user: {
@@ -37,11 +44,11 @@ export async function POST(request: NextRequest) {
         age: user.age,
         gender: user.gender,
         bio: user.bio,
-        interests: user.interests,
+        interests,
         location: user.location,
         occupation: user.occupation,
         isPremium: user.isPremium,
-        onboarded: !!(user.age && user.gender && user.interests && user.interests.length > 0),
+        onboarded: !!(user.age && user.gender && interests.length > 0),
       },
       token,
     })
@@ -57,7 +64,6 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Login error:', error)
-    const msg = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: 'Something went wrong', debug: msg }, { status: 500 })
+    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
   }
 }

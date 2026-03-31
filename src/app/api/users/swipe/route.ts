@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { verifyToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -21,80 +21,97 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot swipe on yourself' }, { status: 400 })
     }
 
-    const targetUser = await db.user.findUnique({ where: { id: targetUserId } })
-    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const { data: targetUser, error: targetError } = await supabase
+      .from('User')
+      .select('id, name')
+      .eq('id', targetUserId)
+      .single()
 
-    // Check if already swiped
-    const existing = await db.match.findFirst({
-      where: {
-        OR: [
-          { user1Id: payload.userId, user2Id: targetUserId },
-          { user1Id: targetUserId, user2Id: payload.userId },
-        ],
-      },
-    })
+    if (targetError || !targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    if (existing) {
+    // Check if already swiped (any match record between these two users)
+    const { data: existing } = await supabase
+      .from('Match')
+      .select('id')
+      .or(`user1Id.eq.${payload.userId},user2Id.eq.${payload.userId}`)
+      .or(`user1Id.eq.${targetUserId},user2Id.eq.${targetUserId}`)
+      .limit(1)
+
+    // More precise: check for any match between these two specific users
+    const { data: existingMatch } = await supabase
+      .from('Match')
+      .select('id')
+      .or(`and(user1Id.eq.${payload.userId},user2Id.eq.${targetUserId}),and(user1Id.eq.${targetUserId},user2Id.eq.${payload.userId})`)
+      .limit(1)
+
+    if (existingMatch && existingMatch.length > 0) {
       return NextResponse.json({ error: 'Already swiped on this user' }, { status: 409 })
     }
 
     // Check if they liked us
-    const reverseSwipe = await db.match.findFirst({
-      where: { user1Id: targetUserId, user2Id: payload.userId, type: 'liked' },
-    })
+    const { data: reverseSwipe } = await supabase
+      .from('Match')
+      .select('id')
+      .eq('user1Id', targetUserId)
+      .eq('user2Id', payload.userId)
+      .eq('type', 'liked')
+      .limit(1)
 
-    const isMutual = reverseSwipe && type === 'liked'
+    const isMutual = reverseSwipe && reverseSwipe.length > 0 && type === 'liked'
 
-    if (reverseSwipe && type === 'liked') {
-      await db.match.update({
-        where: { id: reverseSwipe.id },
-        data: { type: 'mutual' },
-      })
+    if (isMutual) {
+      // Update the reverse swipe to mutual
+      await supabase
+        .from('Match')
+        .update({ type: 'mutual' })
+        .eq('id', reverseSwipe[0].id)
+
+      // Get current user's name
+      const { data: currentUser } = await supabase
+        .from('User')
+        .select('name')
+        .eq('id', payload.userId)
+        .single()
 
       // Create notifications for both users
-      await db.notification.create({
-        data: {
-          userId: payload.userId,
-          type: 'match',
-          title: "It's a match!",
-          body: `You and ${targetUser.name} liked each other!`,
-          fromUserId: targetUserId,
-        },
+      await supabase.from('Notification').insert({
+        userId: payload.userId,
+        type: 'match',
+        title: "It's a match!",
+        body: `You and ${targetUser.name} liked each other!`,
+        fromUserId: targetUserId,
+        read: false,
       })
 
-      await db.notification.create({
-        data: {
-          userId: targetUserId,
-          type: 'match',
-          title: "It's a match!",
-          body: `You and ${payload.userId === targetUserId ? 'someone' : 'someone'} liked each other!`,
-          fromUserId: payload.userId,
-        },
-      })
-
-      const currentUser = await db.user.findUnique({ where: { id: payload.userId }, select: { name: true } })
-      await db.notification.updateMany({
-        where: { userId: targetUserId, type: 'match', fromUserId: payload.userId },
-        data: { body: `You and ${currentUser?.name || 'Someone'} liked each other!` },
+      await supabase.from('Notification').insert({
+        userId: targetUserId,
+        type: 'match',
+        title: "It's a match!",
+        body: `You and ${currentUser?.name || 'Someone'} liked each other!`,
+        fromUserId: payload.userId,
+        read: false,
       })
     } else {
-      await db.match.create({
-        data: {
-          user1Id: payload.userId,
-          user2Id: targetUserId,
-          type,
-        },
+      // Create a new match record (liked or passed)
+      const { error: createError } = await supabase.from('Match').insert({
+        user1Id: payload.userId,
+        user2Id: targetUserId,
+        type,
       })
 
+      if (createError) {
+        console.error('Create match error:', createError)
+        return NextResponse.json({ error: 'Something went wrong' }, { status: 500 })
+      }
+
       if (type === 'liked') {
-        await db.notification.create({
-          data: {
-            userId: targetUserId,
-            type: 'like',
-            title: 'Someone likes you!',
-            body: 'Check discover to see who it is.',
-            fromUserId: payload.userId,
-          },
+        await supabase.from('Notification').insert({
+          userId: targetUserId,
+          type: 'like',
+          title: 'Someone likes you!',
+          body: 'Check discover to see who it is.',
+          fromUserId: payload.userId,
+          read: false,
         })
       }
     }
@@ -102,20 +119,25 @@ export async function POST(request: NextRequest) {
     // Update swipe count
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const user = await db.user.findUnique({ where: { id: payload.userId }, select: { swipesResetDate: true, swipesToday: true } })
-    
-    if (user) {
-      const resetDate = new Date(user.swipesResetDate)
+
+    const { data: swipeUser } = await supabase
+      .from('User')
+      .select('swipesResetDate, swipesToday')
+      .eq('id', payload.userId)
+      .single()
+
+    if (swipeUser) {
+      const resetDate = new Date(swipeUser.swipesResetDate)
       if (resetDate < today) {
-        await db.user.update({
-          where: { id: payload.userId },
-          data: { swipesToday: 1, swipesResetDate: new Date() },
-        })
+        await supabase
+          .from('User')
+          .update({ swipesToday: 1, swipesResetDate: new Date().toISOString() })
+          .eq('id', payload.userId)
       } else {
-        await db.user.update({
-          where: { id: payload.userId },
-          data: { swipesToday: { increment: 1 } },
-        })
+        await supabase
+          .from('User')
+          .update({ swipesToday: (swipeUser.swipesToday || 0) + 1 })
+          .eq('id', payload.userId)
       }
     }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { hashPassword } from '@/lib/auth'
 
 const SEED_SECRET = process.env.SEED_SECRET || 'amori-seed-2026'
@@ -118,24 +118,38 @@ export async function POST(request: Request) {
     let created = 0
 
     for (const user of sampleUsers) {
-      const existing = await db.user.findUnique({ where: { email: user.email } })
+      const { data: existing } = await supabase
+        .from('User')
+        .select('id')
+        .eq('email', user.email)
+        .single()
+
       if (!existing) {
-        await db.user.create({
-          data: {
-            email: user.email,
-            name: user.name,
-            passwordHash,
-            age: user.age,
-            gender: user.gender,
-            bio: user.bio,
-            interests: user.interests,
-            location: user.location,
-            occupation: user.occupation,
-            lookingFor: user.lookingFor,
-            isPremium: user.isPremium || false,
-          },
+        const { error } = await supabase.from('User').insert({
+          email: user.email,
+          name: user.name,
+          passwordHash,
+          age: user.age,
+          gender: user.gender,
+          bio: user.bio,
+          interests: user.interests,
+          location: user.location,
+          occupation: user.occupation,
+          lookingFor: user.lookingFor,
+          isPremium: user.isPremium || false,
+          isOnline: false,
+          swipesToday: 0,
+          maxDistance: 50,
+          ageRangeMin: 18,
+          ageRangeMax: 65,
+          swipesResetDate: new Date().toISOString(),
         })
-        created++
+
+        if (error) {
+          console.error(`Seed error for ${user.email}:`, error)
+        } else {
+          created++
+        }
       }
     }
 

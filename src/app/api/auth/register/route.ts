@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { supabase } from '@/lib/supabase'
 import { hashPassword, createToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
@@ -15,16 +15,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
     }
 
-    const existingUser = await db.user.findUnique({ where: { email } })
+    const { data: existingUser } = await supabase
+      .from('User')
+      .select('id')
+      .eq('email', email)
+      .single()
+
     if (existingUser) {
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
     }
 
     const passwordHash = await hashPassword(password)
-    const token = await createToken({ userId: '', email })
 
-    const user = await db.user.create({
-      data: {
+    const { data: user, error: createError } = await supabase
+      .from('User')
+      .insert({
         email,
         passwordHash,
         name,
@@ -38,10 +43,22 @@ export async function POST(request: NextRequest) {
         maxDistance: 50,
         ageRangeMin: 18,
         ageRangeMax: 65,
-      },
-    })
+        isOnline: false,
+        swipesToday: 0,
+        swipesResetDate: new Date().toISOString(),
+        isPremium: false,
+      })
+      .select()
+      .single()
+
+    if (createError || !user) {
+      console.error('Create user error:', createError)
+      return NextResponse.json({ error: 'Failed to create account' }, { status: 500 })
+    }
 
     const userToken = await createToken({ userId: user.id, email: user.email })
+
+    const interests: string[] = Array.isArray(user.interests) ? user.interests : []
 
     const response = NextResponse.json({
       user: {
@@ -52,11 +69,11 @@ export async function POST(request: NextRequest) {
         age: user.age,
         gender: user.gender,
         bio: user.bio,
-        interests: user.interests,
+        interests,
         location: user.location,
         occupation: user.occupation,
         isPremium: user.isPremium,
-        onboarded: !!(user.age && user.gender && Array.isArray(user.interests) && user.interests.length > 0),
+        onboarded: !!(user.age && user.gender && interests.length > 0),
       },
       token: userToken,
     })
