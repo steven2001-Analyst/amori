@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const payload = await verifyToken(token)
     if (!payload) return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
 
+    // Fetch messages
     const { data: messages, error } = await supabase
       .from('Message')
       .select('*')
@@ -24,7 +25,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to get messages' }, { status: 500 })
     }
 
-    return NextResponse.json({ messages: messages || [] })
+    // Fetch the Match to determine the other user
+    const { data: match, error: matchError } = await supabase
+      .from('Match')
+      .select('user1Id, user2Id')
+      .eq('id', matchId)
+      .single()
+
+    const otherUserId = match
+      ? (match.user1Id === payload.userId ? match.user2Id : match.user1Id)
+      : null
+
+    // Fetch other user's profile
+    let otherUser = null
+    if (otherUserId) {
+      const { data: userData } = await supabase
+        .from('User')
+        .select('id, name, avatar, age, isOnline')
+        .eq('id', otherUserId)
+        .single()
+      if (userData) {
+        otherUser = {
+          id: userData.id,
+          name: userData.name,
+          avatar: userData.avatar,
+          age: userData.age,
+          isOnline: userData.isOnline,
+        }
+      }
+    }
+
+    return NextResponse.json({ messages: messages || [], otherUser })
   } catch (error) {
     console.error('Get messages error:', error)
     return NextResponse.json({ error: 'Failed to get messages' }, { status: 500 })

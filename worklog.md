@@ -158,3 +158,26 @@ Migrate all API routes from Prisma ORM (direct PostgreSQL TCP connection) to @su
 - Supabase TEXT[] arrays returned as proper JS arrays automatically
 - Lint passes with zero errors, build succeeds with all 24 routes
 - Committed and pushed to amori branch
+
+---
+## Task ID: 4 - fix-chat-otheruser-realtime
+Agent: Sub Agent
+Task: Fix chat API otherUser + create realtime polling helper
+
+### Work Summary
+
+#### 1. Fixed GET /api/messages/room to return otherUser data
+**File:** `src/app/api/messages/room/route.ts`
+- After fetching messages, added a second query to the `Match` table to get `user1Id` and `user2Id`
+- Determined the other user by comparing against `payload.userId` (whichever field doesn't match)
+- Added a third query to the `User` table fetching `id, name, avatar, age, isOnline` for the other user
+- Response shape changed from `{ messages }` to `{ messages, otherUser }` — compatible with `chat-room-view.tsx` which already reads `data.otherUser` on line 53
+- This fixes the "?" in the chat header (was showing because `otherUser` was always undefined)
+
+#### 2. Created realtime polling helper
+**File:** `src/lib/realtime.ts` (new)
+- Exported `createRealtimeConnection(matchId, onMessage)` — a clean polling abstraction
+- Polls `/api/messages/room?matchId=` every 3 seconds
+- Tracks `lastMessageId` to only fire callback for truly new messages
+- Returns `{ start, stop }` for lifecycle management in React useEffect
+- Designed as a drop-in replacement for future Socket.io integration
