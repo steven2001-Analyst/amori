@@ -214,3 +214,50 @@ Task: Implement photo upload system (Supabase Storage + /api/upload endpoint)
 #### 4. Build verification
 - `npx next build` passes cleanly with all 25 routes (including new `/api/upload`)
 - Two commits pushed: initial commit + gitignore fix commit
+
+---
+## Task ID: 6 - settings-page-fix-logout
+Agent: Sub Agent
+Task: Settings page + fix logout
+
+### Work Summary
+
+#### 1. Fixed logout to set isOnline: false
+**File:** `src/app/api/auth/logout/route.ts`
+- Previously only cleared the `amori-token` cookie without any DB update
+- Now reads the `amori-token` cookie from the request
+- Verifies the JWT token using `verifyToken()` from `@/lib/auth`
+- If valid, updates the `User` table: sets `isOnline=false` and `lastSeen=new Date().toISOString()`
+- Then clears the cookie as before
+- Added try/catch: if the DB update fails, still clears the cookie (graceful degradation)
+- Uses `NextRequest`/`NextResponse` imports consistent with other API routes
+
+#### 2. Created Settings page
+**Files:**
+- `src/app/(app)/settings/page.tsx` (new) — Server component importing SettingsView
+- `src/components/settings/settings-view.tsx` (new) — Client component with full settings UI
+
+Settings sections:
+1. **Account** — Email (read-only, masked with `s***n@domain.com` pattern), Name (editable Input)
+2. **Discovery Preferences** — Age range min/max, Max distance (3-column grid of number inputs)
+3. **Notifications** — Toggle switches (Switch component from shadcn/ui) for: New Matches, Messages, Likes, Newsletter (UI only, no backend persistence yet)
+4. **Privacy** — Toggle switches for: Show Online Status, Profile Visibility (UI only)
+5. **Danger Zone** — Delete Account button with destructive variant, shows `toast.info('Coming soon')` on click
+
+Features:
+- Fetches user profile on mount via `GET /api/auth/session`
+- Loading skeleton state while fetching
+- Save button PUTs to `/api/profile` with name, maxDistance, ageRangeMin, ageRangeMax
+- Updates Zustand store on successful save via `updateProfile()`
+- Matches existing profile-view.tsx code style: same imports, same card styling, same gradient save button
+
+#### 3. Added Settings to sidebar navigation
+**File:** `src/app/(app)/layout.tsx`
+- `Settings` icon was already imported from lucide-react but unused
+- Added Settings link to the mobile drawer (below Premium link, above Log Out button)
+- Added Settings link to the desktop sidebar (below Premium link, above user card)
+- Both links use `cn()` with active state styling (rose-50 bg, rose-600 text) matching existing nav pattern
+- Links to `/settings` route
+
+#### Build verification
+- `npx next build` passes cleanly with all 26 routes (including new `/settings`)

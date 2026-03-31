@@ -12,7 +12,6 @@ import {
   Sparkles,
   Shield,
   MessageCircle,
-  Users,
   Star,
   ArrowRight,
   Menu,

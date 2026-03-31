@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow } from 'date-fns'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 import {
   Bell,
   Heart,
@@ -170,6 +171,4 @@ export default function NotificationsPage() {
   )
 }
 
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ')
-}
+
