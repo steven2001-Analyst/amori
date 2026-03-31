@@ -12,7 +12,8 @@ export async function POST(request: NextRequest) {
     if (existing) return NextResponse.json({ error: 'Email already registered' }, { status: 409 })
 
     const passwordHash = await hashPassword(password)
-    const { data: user, error } = await supabase.from('User').insert({ name, email, passwordHash, interests: [], isPremium: false, isOnline: true, swipesToday: 0 }).select().single()
+    const crypto = await import('crypto')
+    const { data: user, error } = await supabase.from('User').insert({ id: crypto.randomUUID(), name, email, passwordHash, interests: [], isPremium: false, isOnline: true, swipesToday: 0, ageRangeMin: 18, ageRangeMax: 50, maxDistance: 50, swipesResetDate: new Date().toISOString() }).select().single()
     if (error) { console.error('Register error:', error); return NextResponse.json({ error: 'Failed to create account' }, { status: 500 }) }
 
     const token = await createToken({ userId: user.id, email: user.email })
